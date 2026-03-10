@@ -19,9 +19,32 @@ export type StartPoint = {
   source: StartPointSource;
 };
 
+export type RouteStopBase = {
+  id: string;
+  label: string;
+  coordinates: [number, number];
+};
+
+export type StartRouteStop = RouteStopBase & {
+  kind: 'start';
+  source: StartPointSource;
+};
+
+export type CityRouteStop = RouteStopBase & {
+  kind: 'city';
+};
+
+export type ParkRouteStop = RouteStopBase & {
+  kind: 'park';
+  parkCode: string;
+  parkId: string;
+  state: string;
+};
+
+export type RouteStop = StartRouteStop | CityRouteStop | ParkRouteStop;
+
 export type TripState = {
-  startPoint: StartPoint | null;
-  selectedParkIds: string[];
+  routeStops: RouteStop[];
 };
 
 export type RouteLegSummary = {

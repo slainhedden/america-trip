@@ -17,7 +17,17 @@ import Map, {
 } from 'react-map-gl/maplibre';
 import { fetchNationalParks, fetchPublicNationalParks } from './lib/nps';
 import { loadNpsApiKey, loadParkCatalog, loadTripState, saveParkCatalog, saveTripState } from './lib/storage';
-import type { Park, RouteSummary, SearchResult, StartPoint, TripState } from './types';
+import type {
+  CityRouteStop,
+  Park,
+  ParkRouteStop,
+  RouteStop,
+  RouteSummary,
+  SearchResult,
+  StartPoint,
+  StartRouteStop,
+  TripState,
+} from './types';
 
 const DEFAULT_VIEW = {
   longitude: -98.5795,
@@ -25,7 +35,7 @@ const DEFAULT_VIEW = {
   zoom: 3.45,
 };
 
-const DEFAULT_SELECTED_PARK_IDS = ['acad', 'grsm', 'shen'];
+const DEFAULT_ROUTE_PARK_IDS = ['acad', 'grsm', 'shen'];
 const FEATURED_PARK_IDS = ['yell', 'yose', 'grca', 'zion', 'grsm', 'glac', 'olym', 'acad', 'romo', 'arch', 'ever', 'dena'];
 const GEOCODING_API_URL = import.meta.env.VITE_GEOCODING_API_URL?.trim();
 const GEOCODING_API_KEY = import.meta.env.VITE_GEOCODING_API_KEY?.trim();
@@ -33,6 +43,7 @@ const ROUTING_API_URL =
   import.meta.env.VITE_ROUTING_API_URL?.trim() ?? 'https://router.project-osrm.org/route/v1/driving';
 const ENV_NPS_API_KEY = import.meta.env.VITE_NPS_API_KEY?.trim() ?? '';
 const PANEL_LAYOUT_STORAGE_KEY = 'america-trip-panel-layouts';
+const US_STATES_GEOJSON_URL = 'https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json';
 const PANEL_MARGIN = 20;
 const PANEL_GAP = 16;
 const PANEL_ORDER: PanelId[] = ['planner', 'route', 'catalog', 'featured'];
@@ -49,6 +60,11 @@ const EMPTY_ROUTE: RouteSummary = {
   totalDurationHours: 0,
   legs: [],
   provider: 'OSRM-compatible routing',
+};
+
+const EMPTY_STATE_LABELS: GeoJSON.FeatureCollection<GeoJSON.Point, { name: string }> = {
+  type: 'FeatureCollection',
+  features: [],
 };
 
 type StateSelection = {
@@ -78,6 +94,8 @@ type FloatingPanelProps = {
   onChange: (layout: PanelLayout) => void;
   title: string;
 };
+
+type StateBoundaryGeometry = GeoJSON.Polygon | GeoJSON.MultiPolygon;
 
 const SATELLITE_STYLE = {
   version: 8 as const,
@@ -481,6 +499,10 @@ function createCoordinateGrid(stepDegrees: number): GeoJSON.FeatureCollection<Ge
   };
 }
 
+function createParkMap(parks: Park[]): globalThis.Map<string, Park> {
+  return new globalThis.Map(parks.map((park) => [park.id, park]));
+}
+
 function dedupeParks(parks: Park[]): Park[] {
   const seen = new Set<string>();
 
@@ -492,6 +514,111 @@ function dedupeParks(parks: Park[]): Park[] {
     seen.add(park.id);
     return true;
   });
+}
+
+function createStopId(prefix: string): string {
+  const randomId = globalThis.crypto?.randomUUID?.();
+  if (randomId) {
+    return `${prefix}:${randomId}`;
+  }
+
+  return `${prefix}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function hasValidCoordinates(coordinates: [number, number]): boolean {
+  return Number.isFinite(coordinates[0]) && Number.isFinite(coordinates[1]);
+}
+
+function createStartStop(startPoint: StartPoint): StartRouteStop {
+  return {
+    id: 'start',
+    kind: 'start',
+    label: startPoint.label,
+    coordinates: startPoint.coordinates,
+    source: startPoint.source,
+  };
+}
+
+function createCityStop(result: SearchResult): CityRouteStop {
+  return {
+    id: createStopId('city'),
+    kind: 'city',
+    label: result.label,
+    coordinates: result.coordinates,
+  };
+}
+
+function createParkStop(park: Park): ParkRouteStop {
+  return {
+    id: `park:${park.id}`,
+    kind: 'park',
+    label: park.name,
+    coordinates: park.coordinates,
+    parkCode: park.parkCode.toUpperCase(),
+    parkId: park.id,
+    state: park.state,
+  };
+}
+
+function hydrateRouteStop(stop: RouteStop, parksById: globalThis.Map<string, Park>): RouteStop {
+  if (stop.kind !== 'park') {
+    return stop;
+  }
+
+  const park = parksById.get(stop.parkId);
+  return park ? createParkStop(park) : stop;
+}
+
+function normalizeRouteStops(stops: RouteStop[]): RouteStop[] {
+  let startStop: StartRouteStop | null = null;
+  const seenParkIds = new Set<string>();
+  const orderedStops: RouteStop[] = [];
+
+  for (const stop of stops) {
+    if (stop.kind === 'start') {
+      if (!startStop) {
+        startStop = { ...stop, id: 'start' };
+      }
+      continue;
+    }
+
+    if (stop.kind === 'park') {
+      if (seenParkIds.has(stop.parkId)) {
+        continue;
+      }
+      seenParkIds.add(stop.parkId);
+    }
+
+    orderedStops.push(stop);
+  }
+
+  return startStop ? [startStop, ...orderedStops] : orderedStops;
+}
+
+function buildDefaultRouteStops(parksById: globalThis.Map<string, Park>): RouteStop[] {
+  return DEFAULT_ROUTE_PARK_IDS.map((parkId) => parksById.get(parkId)).filter(Boolean).map((park) => createParkStop(park as Park));
+}
+
+function getRouteStopMeta(stop: RouteStop): string {
+  switch (stop.kind) {
+    case 'start':
+      return stop.source === 'search' ? 'Search origin' : 'Pinned origin';
+    case 'city':
+      return 'City stop';
+    case 'park':
+      return stop.state;
+  }
+}
+
+function getRouteStopKindLabel(stop: RouteStop): string {
+  switch (stop.kind) {
+    case 'start':
+      return 'START';
+    case 'city':
+      return 'CITY';
+    case 'park':
+      return '⛺ TENT';
+  }
 }
 
 const MINOR_GRID = createCoordinateGrid(5);
@@ -570,13 +697,12 @@ async function searchPlaces(query: string): Promise<SearchResult[]> {
   }));
 }
 
-async function fetchRoute(startPoint: StartPoint, parks: Park[]): Promise<RouteSummary> {
-  if (parks.length === 0) {
+async function fetchRoute(stops: RouteStop[]): Promise<RouteSummary> {
+  if (stops.length < 2 || stops[0]?.kind !== 'start') {
     return EMPTY_ROUTE;
   }
 
-  const waypoints = [startPoint.coordinates, ...parks.map((park) => park.coordinates)];
-  const coordinates = waypoints.map(([lng, lat]) => `${lng},${lat}`).join(';');
+  const coordinates = stops.map((stop) => `${stop.coordinates[0]},${stop.coordinates[1]}`).join(';');
   const routeUrl = new URL(`${ROUTING_API_URL}/${coordinates}`);
   routeUrl.searchParams.set('overview', 'full');
   routeUrl.searchParams.set('geometries', 'geojson');
@@ -604,7 +730,7 @@ async function fetchRoute(startPoint: StartPoint, parks: Park[]): Promise<RouteS
     throw new Error('No route found for the selected stops.');
   }
 
-  const labels = [startPoint.label, ...parks.map((park) => park.name)];
+  const labels = stops.map((stop) => stop.label);
   const legs = (route.legs ?? []).map((leg, index) => ({
     from: labels[index] ?? `Stop ${index + 1}`,
     to: labels[index + 1] ?? `Stop ${index + 2}`,
@@ -700,17 +826,104 @@ function fitMapToCoordinates(map: MapRef | null, coordinates: Array<[number, num
   );
 }
 
+function getPolygonBounds(polygon: GeoJSON.Position[][]) {
+  let west = Number.POSITIVE_INFINITY;
+  let east = Number.NEGATIVE_INFINITY;
+  let south = Number.POSITIVE_INFINITY;
+  let north = Number.NEGATIVE_INFINITY;
+
+  for (const ring of polygon) {
+    for (const coordinate of ring) {
+      west = Math.min(west, coordinate[0]);
+      east = Math.max(east, coordinate[0]);
+      south = Math.min(south, coordinate[1]);
+      north = Math.max(north, coordinate[1]);
+    }
+  }
+
+  return { west, east, south, north };
+}
+
+function buildStateLabelCandidate(feature: GeoJSON.Feature<StateBoundaryGeometry, { name?: string }>) {
+  const name = feature.properties?.name?.trim();
+  if (!name || !feature.geometry) {
+    return null;
+  }
+
+  const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
+  let bestBounds: ReturnType<typeof getPolygonBounds> | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const polygon of polygons) {
+    const bounds = getPolygonBounds(polygon);
+    const score = Math.abs(bounds.east - bounds.west) * Math.abs(bounds.north - bounds.south);
+    if (score > bestScore) {
+      bestScore = score;
+      bestBounds = bounds;
+    }
+  }
+
+  if (!bestBounds || !Number.isFinite(bestScore)) {
+    return null;
+  }
+
+  return {
+    name,
+    score: bestScore,
+    coordinates: [((bestBounds.west + bestBounds.east) / 2) as number, ((bestBounds.south + bestBounds.north) / 2) as number] as [
+      number,
+      number,
+    ],
+  };
+}
+
+async function fetchStateLabelPoints(): Promise<GeoJSON.FeatureCollection<GeoJSON.Point, { name: string }>> {
+  const response = await fetch(US_STATES_GEOJSON_URL);
+  if (!response.ok) {
+    throw new Error('Unable to load state label geometry.');
+  }
+
+  const data = (await response.json()) as GeoJSON.FeatureCollection<StateBoundaryGeometry, { name?: string }>;
+  const bestByName = new globalThis.Map<string, { coordinates: [number, number]; score: number }>();
+
+  for (const feature of data.features) {
+    const candidate = buildStateLabelCandidate(feature);
+    if (!candidate) {
+      continue;
+    }
+
+    const existing = bestByName.get(candidate.name);
+    if (!existing || candidate.score > existing.score) {
+      bestByName.set(candidate.name, {
+        coordinates: candidate.coordinates,
+        score: candidate.score,
+      });
+    }
+  }
+
+  return {
+    type: 'FeatureCollection',
+    features: Array.from(bestByName.entries()).map(([name, entry]) => ({
+      type: 'Feature',
+      properties: { name },
+      geometry: {
+        type: 'Point',
+        coordinates: entry.coordinates,
+      },
+    })),
+  };
+}
+
 export default function App() {
-  const initialStateRef = useRef<TripState | null>(loadTripState());
   const initialParkCatalogRef = useRef<Park[]>(loadParkCatalog());
+  const initialStateRef = useRef<TripState | null>(loadTripState(initialParkCatalogRef.current));
+  const hadStoredTripStateRef = useRef(initialStateRef.current !== null);
   const initialApiKeyRef = useRef(loadNpsApiKey() || ENV_NPS_API_KEY);
   const mapRef = useRef<MapRef | null>(null);
+  const searchRequestIdRef = useRef(0);
 
-  const [startPoint, setStartPoint] = useState<StartPoint | null>(
-    initialStateRef.current?.startPoint ?? null,
-  );
-  const [selectedParkIds, setSelectedParkIds] = useState<string[]>(
-    initialStateRef.current?.selectedParkIds ?? DEFAULT_SELECTED_PARK_IDS,
+  const [routeStops, setRouteStops] = useState<RouteStop[]>(
+    () => initialStateRef.current?.routeStops ?? buildDefaultRouteStops(createParkMap(initialParkCatalogRef.current)),
   );
   const [parks, setParks] = useState<Park[]>(initialParkCatalogRef.current);
   const [activeParkId, setActiveParkId] = useState<string | null>(null);
@@ -718,7 +931,7 @@ export default function App() {
   const [, setParksStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
     initialParkCatalogRef.current.length > 0 ? 'ready' : initialApiKeyRef.current ? 'loading' : 'idle',
   );
-  const [catalogSource, setCatalogSource] = useState<'public' | 'developer' | 'cache'>(
+  const [, setCatalogSource] = useState<'public' | 'developer' | 'cache'>(
     initialParkCatalogRef.current.length > 0 ? 'cache' : 'public',
   );
   const [parksError, setParksError] = useState<string | null>(null);
@@ -726,6 +939,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [searchedQuery, setSearchedQuery] = useState('');
   const [routeSummary, setRouteSummary] = useState<RouteSummary>(EMPTY_ROUTE);
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [routeError, setRouteError] = useState<string | null>(null);
@@ -733,15 +947,57 @@ export default function App() {
   const [, setStateStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [stateError, setStateError] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<'inspect' | 'pin-start'>('inspect');
+  const [plannerPanelOpen, setPlannerPanelOpen] = useState(true);
   const [catalogPanelOpen, setCatalogPanelOpen] = useState(false);
+  const [catalogPanelVisible, setCatalogPanelVisible] = useState(true);
   const [routePanelOpen, setRoutePanelOpen] = useState(true);
   const [routeDetailsOpen, setRouteDetailsOpen] = useState(false);
+  const [featuredPanelOpen, setFeaturedPanelOpen] = useState(true);
   const [panelLayouts, setPanelLayouts] = useState<PanelLayouts>(() => loadPanelLayouts());
+  const [stateLabelPoints, setStateLabelPoints] = useState(EMPTY_STATE_LABELS);
 
-  const parksById = useMemo(
-    () => new globalThis.Map(parks.map((park) => [park.id, park])),
-    [parks],
+  const parksById = useMemo(() => createParkMap(parks), [parks]);
+  const hydratedRouteStops = useMemo(
+    () => normalizeRouteStops(routeStops.map((stop) => hydrateRouteStop(stop, parksById))),
+    [parksById, routeStops],
   );
+  const startStop = useMemo(
+    () => (hydratedRouteStops[0]?.kind === 'start' ? (hydratedRouteStops[0] as StartRouteStop) : null),
+    [hydratedRouteStops],
+  );
+  const travelStops = useMemo(() => (startStop ? hydratedRouteStops.slice(1) : hydratedRouteStops), [hydratedRouteStops, startStop]);
+  const routeableTravelStops = useMemo(
+    () => travelStops.filter((stop) => hasValidCoordinates(stop.coordinates)),
+    [travelStops],
+  );
+  const hasPendingRouteStopData = useMemo(
+    () => travelStops.some((stop) => !hasValidCoordinates(stop.coordinates)),
+    [travelStops],
+  );
+  const routeableStops = useMemo(() => {
+    if (!startStop || !hasValidCoordinates(startStop.coordinates) || hasPendingRouteStopData) {
+      return [];
+    }
+
+    return [startStop, ...routeableTravelStops];
+  }, [hasPendingRouteStopData, routeableTravelStops, startStop]);
+  const routeStopOrder = useMemo(
+    () => new globalThis.Map(travelStops.map((stop, index) => [stop.id, index + 1])),
+    [travelStops],
+  );
+  const routeMarkerOrder = useMemo(
+    () => new globalThis.Map(routeableTravelStops.map((stop, index) => [stop.id, index + 1])),
+    [routeableTravelStops],
+  );
+  const parkRouteStops = useMemo(
+    () => travelStops.filter((stop): stop is ParkRouteStop => stop.kind === 'park'),
+    [travelStops],
+  );
+  const cityRouteStops = useMemo(
+    () => travelStops.filter((stop): stop is CityRouteStop => stop.kind === 'city' && hasValidCoordinates(stop.coordinates)),
+    [travelStops],
+  );
+  const routeParkIds = useMemo(() => new Set(parkRouteStops.map((stop) => stop.parkId)), [parkRouteStops]);
   const filteredParks = useMemo(() => {
     const query = parkFilterQuery.trim().toLowerCase();
     if (!query) {
@@ -753,15 +1009,14 @@ export default function App() {
     );
   }, [parkFilterQuery, parks]);
   const selectedParks = useMemo(
-    () => selectedParkIds.map((id) => parksById.get(id)).filter(Boolean) as Park[],
-    [parksById, selectedParkIds],
+    () => parkRouteStops.map((stop) => parksById.get(stop.parkId)).filter(Boolean) as Park[],
+    [parkRouteStops, parksById],
   );
   const featuredParks = useMemo(
     () => FEATURED_PARK_IDS.map((id) => parksById.get(id)).filter(Boolean) as Park[],
     [parksById],
   );
   const quickPickParks = featuredParks.length > 0 ? featuredParks : parks.slice(0, 12);
-  const selectedParkCount = selectedParks.length;
   const activePark = activeParkId ? parksById.get(activeParkId) ?? null : null;
   const stateParks = useMemo(
     () => (selectedState ? parks.filter((park) => matchesStateLabel(park, selectedState.name)) : []),
@@ -773,14 +1028,14 @@ export default function App() {
       : dedupeParks([
           ...selectedParks,
           ...quickPickParks,
-          ...parks.filter((park) => !selectedParkIds.includes(park.id)).slice(0, 24),
+          ...parks.filter((park) => !routeParkIds.has(park.id)).slice(0, 24),
         ]);
 
     return base.slice(0, 24);
-  }, [filteredParks, parkFilterQuery, parks, quickPickParks, selectedParkIds, selectedParks]);
+  }, [filteredParks, parkFilterQuery, parks, quickPickParks, routeParkIds, selectedParks]);
   const inactiveFeaturedParks = useMemo(
-    () => quickPickParks.filter((park) => !selectedParkIds.includes(park.id)),
-    [quickPickParks, selectedParkIds],
+    () => quickPickParks.filter((park) => !routeParkIds.has(park.id)),
+    [quickPickParks, routeParkIds],
   );
   const routeFeature = useMemo(() => {
     if (!routeSummary.geometry) {
@@ -793,13 +1048,21 @@ export default function App() {
       properties: {},
     };
   }, [routeSummary.geometry]);
+  const mappableRouteCoordinates = useMemo(
+    () => hydratedRouteStops.filter((stop) => hasValidCoordinates(stop.coordinates)).map((stop) => stop.coordinates),
+    [hydratedRouteStops],
+  );
+  const plannedStopCount = hydratedRouteStops.length;
 
   useEffect(() => {
+    if (!hadStoredTripStateRef.current && hydratedRouteStops.length === 0 && parks.length === 0) {
+      return;
+    }
+
     saveTripState({
-      startPoint,
-      selectedParkIds,
+      routeStops: hydratedRouteStops,
     });
-  }, [selectedParkIds, startPoint]);
+  }, [hydratedRouteStops, parks.length]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -810,13 +1073,57 @@ export default function App() {
   }, [panelLayouts]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadStateLabels() {
+      try {
+        const nextStateLabelPoints = await fetchStateLabelPoints();
+        if (!cancelled) {
+          setStateLabelPoints(nextStateLabelPoints);
+        }
+      } catch {
+        if (!cancelled) {
+          setStateLabelPoints(EMPTY_STATE_LABELS);
+        }
+      }
+    }
+
+    void loadStateLabels();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      searchRequestIdRef.current += 1;
+      setSearchResults([]);
+      setSearchStatus('idle');
+      setSearchedQuery('');
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void runSearch(trimmedQuery);
+    }, 240);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
     function handleViewportResize() {
-      setPanelLayouts((current) => ({
-        planner: clampPanelLayout(current.planner),
-        route: clampPanelLayout(current.route),
-        catalog: clampPanelLayout(current.catalog),
-        featured: clampPanelLayout(current.featured),
-      }));
+      setPanelLayouts((current) =>
+        reconcilePanelLayouts({
+          planner: clampPanelLayout(current.planner),
+          route: clampPanelLayout(current.route),
+          catalog: clampPanelLayout(current.catalog),
+          featured: clampPanelLayout(current.featured),
+        }),
+      );
     }
 
     window.addEventListener('resize', handleViewportResize);
@@ -870,20 +1177,20 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [apiKey]);
+  }, [apiKey, parks.length]);
 
   useEffect(() => {
     if (parks.length === 0) {
       return;
     }
 
-    setSelectedParkIds((current) => {
-      const valid = current.filter((id) => parksById.has(id));
-      if (valid.length > 0 || current.length === 0) {
-        return valid;
+    setRouteStops((current) => {
+      const next = normalizeRouteStops(current.map((stop) => hydrateRouteStop(stop, parksById)));
+      if (next.length === 0 && !hadStoredTripStateRef.current) {
+        return buildDefaultRouteStops(parksById);
       }
 
-      return DEFAULT_SELECTED_PARK_IDS.filter((id) => parksById.has(id));
+      return JSON.stringify(current) === JSON.stringify(next) ? current : next;
     });
   }, [parks.length, parksById]);
 
@@ -894,7 +1201,7 @@ export default function App() {
   }, [activeParkId, parksById]);
 
   useEffect(() => {
-    if (!startPoint || selectedParks.length === 0) {
+    if (routeableStops.length < 2) {
       setRouteSummary(EMPTY_ROUTE);
       setRouteStatus('idle');
       setRouteError(null);
@@ -902,15 +1209,14 @@ export default function App() {
     }
 
     let cancelled = false;
-    const currentStart = startPoint;
-    const currentParks = selectedParks;
+    const currentStops = routeableStops;
 
     async function runRouteRequest() {
       setRouteStatus('loading');
       setRouteError(null);
 
       try {
-        const summary = await fetchRoute(currentStart, currentParks);
+        const summary = await fetchRoute(currentStops);
         if (!cancelled) {
           setRouteSummary(summary);
           setRouteStatus('idle');
@@ -929,15 +1235,18 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [selectedParks, startPoint]);
+  }, [routeableStops]);
 
   useEffect(() => {
-    if (!startPoint || selectedParks.length === 0 || !routeSummary.geometry) {
+    if (!routeSummary.geometry || routeableStops.length < 2) {
       return;
     }
 
-    fitMapToCoordinates(mapRef.current, [startPoint.coordinates, ...selectedParks.map((park) => park.coordinates)]);
-  }, [routeSummary.geometry, selectedParks, startPoint]);
+    fitMapToCoordinates(
+      mapRef.current,
+      routeableStops.map((stop) => stop.coordinates),
+    );
+  }, [routeSummary.geometry, routeableStops]);
 
   function focusCoordinates(coordinates: [number, number], zoom = 5.8) {
     mapRef.current?.flyTo({
@@ -948,20 +1257,30 @@ export default function App() {
   }
 
   function updatePanelLayout(id: PanelId, layout: PanelLayout) {
-    setPanelLayouts((current) => ({
-      ...current,
-      [id]: layout,
-    }));
+    setPanelLayouts((current) => reconcilePanelLayouts({ ...current, [id]: layout }, id));
   }
 
   function setStartFromSearch(result: SearchResult) {
-    const nextStart: StartPoint = {
+    const nextStart = createStartStop({
       label: result.label,
       coordinates: result.coordinates,
       source: 'search',
-    };
+    });
 
-    setStartPoint(nextStart);
+    setRouteStops((current) => [nextStart, ...current.filter((stop) => stop.kind !== 'start')]);
+    setSearchQuery(result.label);
+    setSearchResults([]);
+    setRoutePanelOpen(true);
+    setMapMode('inspect');
+    focusCoordinates(result.coordinates);
+  }
+
+  function addCityStopFromSearch(result: SearchResult) {
+    if (!startStop) {
+      return;
+    }
+
+    setRouteStops((current) => [...normalizeRouteStops(current), createCityStop(result)]);
     setSearchQuery(result.label);
     setSearchResults([]);
     setRoutePanelOpen(true);
@@ -998,52 +1317,88 @@ export default function App() {
       return;
     }
 
-    const nextStart: StartPoint = {
+    const nextStart = createStartStop({
       label: `Pinned start (${event.lngLat.lat.toFixed(3)}, ${event.lngLat.lng.toFixed(3)})`,
       coordinates,
       source: 'map_click',
-    };
+    });
 
-    setStartPoint(nextStart);
+    setRouteStops((current) => [nextStart, ...current.filter((stop) => stop.kind !== 'start')]);
     setRoutePanelOpen(true);
     setMapMode('inspect');
     focusCoordinates(nextStart.coordinates, 6.1);
   }
 
-  function togglePark(id: string) {
-    setSelectedParkIds((current) =>
-      current.includes(id) ? current.filter((parkId) => parkId !== id) : [...current, id],
-    );
+  function isParkSelected(parkId: string): boolean {
+    return routeParkIds.has(parkId);
   }
 
-  function movePark(index: number, direction: -1 | 1) {
-    setSelectedParkIds((current) => {
+  function togglePark(park: Park) {
+    setRouteStops((current) => {
+      const normalized = normalizeRouteStops(current);
+      const exists = normalized.some((stop) => stop.kind === 'park' && stop.parkId === park.id);
+      if (exists) {
+        return normalized.filter((stop) => !(stop.kind === 'park' && stop.parkId === park.id));
+      }
+
+      return [...normalized, createParkStop(park)];
+    });
+  }
+
+  function removeRouteStop(stopId: string) {
+    setRouteStops((current) => current.filter((stop) => stop.id !== stopId));
+  }
+
+  function moveRouteStop(index: number, direction: -1 | 1) {
+    setRouteStops((current) => {
+      const normalized = normalizeRouteStops(current);
+      const firstMovableIndex = normalized[0]?.kind === 'start' ? 1 : 0;
       const nextIndex = index + direction;
-      if (nextIndex < 0 || nextIndex >= current.length) {
+      if (index < firstMovableIndex || nextIndex < firstMovableIndex || nextIndex >= normalized.length) {
         return current;
       }
 
-      const next = [...current];
-      const [parkId] = next.splice(index, 1);
-      next.splice(nextIndex, 0, parkId);
+      const next = [...normalized];
+      const [stop] = next.splice(index, 1);
+      next.splice(nextIndex, 0, stop);
       return next;
     });
   }
 
-  async function handleSearchSubmit() {
-    if (!searchQuery.trim()) {
+  async function runSearch(query: string) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+      setSearchResults([]);
+      setSearchStatus('idle');
+      setSearchedQuery('');
       return;
     }
 
+    const requestId = ++searchRequestIdRef.current;
     setSearchStatus('loading');
+
     try {
-      const results = await searchPlaces(searchQuery);
+      const results = await searchPlaces(trimmedQuery);
+      if (requestId !== searchRequestIdRef.current) {
+        return;
+      }
+
       setSearchResults(results);
       setSearchStatus('idle');
+      setSearchedQuery(trimmedQuery);
     } catch {
+      if (requestId !== searchRequestIdRef.current) {
+        return;
+      }
+
       setSearchResults([]);
       setSearchStatus('error');
+      setSearchedQuery(trimmedQuery);
     }
+  }
+
+  async function handleSearchSubmit() {
+    await runSearch(searchQuery);
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -1053,7 +1408,7 @@ export default function App() {
     }
   }
 
-  function handleMarkerClick(
+  function handleParkMarkerClick(
     event: ReactMouseEvent<HTMLButtonElement>,
     parkId: string,
     coordinates: [number, number],
@@ -1064,35 +1419,34 @@ export default function App() {
     focusCoordinates(coordinates, 5.8);
   }
 
+  function handleRouteStopMarkerClick(event: ReactMouseEvent<HTMLButtonElement>, stop: RouteStop) {
+    event.stopPropagation();
+    if (stop.kind === 'park') {
+      setActiveParkId(stop.parkId);
+    } else {
+      setActiveParkId(null);
+    }
+    setRoutePanelOpen(true);
+    focusCoordinates(stop.coordinates, stop.kind === 'city' ? 6.2 : 5.8);
+  }
+
   function handleQuickPick(park: Park) {
     setActiveParkId(park.id);
-    if (!selectedParkIds.includes(park.id)) {
-      setSelectedParkIds((current) => [...current, park.id]);
+    if (!isParkSelected(park.id)) {
+      togglePark(park);
     }
     setRoutePanelOpen(true);
     focusCoordinates(park.coordinates, 5.5);
   }
 
   function handleFrameRoute() {
-    const points = [
-      ...(startPoint ? [startPoint.coordinates] : []),
-      ...selectedParks.map((park) => park.coordinates),
-    ];
-
-    fitMapToCoordinates(mapRef.current, points);
+    fitMapToCoordinates(mapRef.current, mappableRouteCoordinates);
   }
 
-  const catalogSourceLabel =
-    catalogSource === 'developer'
-      ? 'DEVELOPER FEED'
-      : catalogSource === 'cache'
-        ? 'LOCAL CACHE'
-        : 'PUBLIC FIND A PARK';
   const routeStateLabel =
     routeStatus === 'error' ? 'ROUTE FAIL' : routeStatus === 'loading' ? 'SOLVING' : 'NOMINAL';
-  const currentStartMode = startPoint ? (startPoint.source === 'search' ? 'SEARCH LOCK' : 'MANUAL PIN') : 'UNSET';
+  const currentStartMode = startStop ? (startStop.source === 'search' ? 'SEARCH LOCK' : 'MANUAL PIN') : 'UNSET';
   const visibleParkCountLabel = parkFilterQuery.trim() ? `${filteredParks.length} MATCHES` : `${parks.length} PARKS`;
-  const mapModeLabel = mapMode === 'inspect' ? 'STATE INSPECT' : 'PIN START';
   const inspectorCountLabel = selectedState ? `${stateParks.length} PARKS IN ${selectedState.name.toUpperCase()}` : 'STATE INSPECT';
 
   return (
@@ -1130,8 +1484,73 @@ export default function App() {
             />
           </Source>
 
-          {startPoint ? (
-            <Marker longitude={startPoint.coordinates[0]} latitude={startPoint.coordinates[1]}>
+          <Source id="states" type="geojson" data={US_STATES_GEOJSON_URL}>
+            <Layer
+              id="state-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#06160e',
+                'fill-opacity': 0.04,
+              }}
+            />
+            <Layer
+              id="state-outline"
+              type="line"
+              paint={{
+                'line-color': '#d4e7c8',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.8, 6, 1.8],
+                'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.28, 6, 0.72],
+              }}
+            />
+            {selectedState ? (
+              <Layer
+                id="state-fill-active"
+                type="fill"
+                filter={['==', ['get', 'name'], selectedState.name]}
+                paint={{
+                  'fill-color': '#163b20',
+                  'fill-opacity': 0.22,
+                }}
+              />
+            ) : null}
+            {selectedState ? (
+              <Layer
+                id="state-outline-active"
+                type="line"
+                filter={['==', ['get', 'name'], selectedState.name]}
+                paint={{
+                  'line-color': '#f1ff9a',
+                  'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1.4, 6, 3.2],
+                  'line-opacity': 0.95,
+                }}
+              />
+            ) : null}
+          </Source>
+
+          <Source id="state-label-points" type="geojson" data={stateLabelPoints}>
+            <Layer
+              id="state-labels"
+              type="symbol"
+              minzoom={3}
+              layout={{
+                'text-field': ['get', 'name'],
+                'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                'text-size': ['interpolate', ['linear'], ['zoom'], 3, 10, 5, 14],
+                'text-letter-spacing': 0.08,
+                'text-max-width': 8,
+                'text-transform': 'uppercase',
+              }}
+              paint={{
+                'text-color': '#f5fee3',
+                'text-halo-color': 'rgba(4, 11, 7, 0.86)',
+                'text-halo-width': 1.6,
+                'text-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.24, 4, 0.76, 5, 0.92],
+              }}
+            />
+          </Source>
+
+          {startStop ? (
+            <Marker longitude={startStop.coordinates[0]} latitude={startStop.coordinates[1]}>
               <button type="button" className="marker marker--start" aria-label="Trip starting point">
                 START
               </button>
@@ -1143,7 +1562,7 @@ export default function App() {
               <button
                 type="button"
                 className="marker marker--featured"
-                onClick={(event) => handleMarkerClick(event, park.id, park.coordinates)}
+                onClick={(event) => handleParkMarkerClick(event, park.id, park.coordinates)}
                 aria-label={`Featured park ${park.name}`}
               >
                 {park.parkCode.toUpperCase()}
@@ -1151,16 +1570,30 @@ export default function App() {
             </Marker>
           ))}
 
-          {selectedParks.map((park, index) => (
-            <Marker key={park.id} longitude={park.coordinates[0]} latitude={park.coordinates[1]}>
+          {cityRouteStops.map((stop) => (
+            <Marker key={stop.id} longitude={stop.coordinates[0]} latitude={stop.coordinates[1]}>
+              <button
+                type="button"
+                className="marker marker--city"
+                onClick={(event) => handleRouteStopMarkerClick(event, stop)}
+                aria-label={`${stop.label} city stop`}
+              >
+                <span className="marker__flag">CITY</span>
+                <span>{String(routeMarkerOrder.get(stop.id) ?? 0).padStart(2, '0')}</span>
+              </button>
+            </Marker>
+          ))}
+
+          {parkRouteStops.filter((stop) => hasValidCoordinates(stop.coordinates)).map((stop) => (
+            <Marker key={stop.id} longitude={stop.coordinates[0]} latitude={stop.coordinates[1]}>
               <button
                 type="button"
                 className="marker marker--selected"
-                style={{ '--park-color': park.heroColor } as CSSProperties}
-                onClick={(event) => handleMarkerClick(event, park.id, park.coordinates)}
-                aria-label={`${park.name} national park`}
+                onClick={(event) => handleRouteStopMarkerClick(event, stop)}
+                aria-label={`${stop.label} national park route stop`}
               >
-                {String(index + 1).padStart(2, '0')}
+                <span className="marker__flag">⛺</span>
+                <span>{String(routeMarkerOrder.get(stop.id) ?? 0).padStart(2, '0')}</span>
               </button>
             </Marker>
           ))}
@@ -1204,8 +1637,8 @@ export default function App() {
                 <span>{activePark.state}</span>
                 <p>{activePark.description}</p>
                 <div className="popup-card__actions">
-                  <button type="button" className="nerv-btn" onClick={() => togglePark(activePark.id)}>
-                    {selectedParkIds.includes(activePark.id) ? 'Remove From Route' : 'Add To Route'}
+                  <button type="button" className="nerv-btn" onClick={() => togglePark(activePark)}>
+                    {isParkSelected(activePark.id) ? 'Remove From Route' : 'Add To Route'}
                   </button>
                   <a href={activePark.websiteUrl} target="_blank" rel="noreferrer">
                     Open official park page
@@ -1218,111 +1651,142 @@ export default function App() {
 
         <div className="map-wash" />
         <div className="measurement-overlay console-grid-overlay" />
-        <FloatingPanel
-          title="Planner"
-          className="command-card"
-          accent="orange"
-          layout={panelLayouts.planner}
-          onChange={(layout) => updatePanelLayout('planner', layout)}
-        >
-          <div className="planner-header">
-            <div>
-              <p className="console-overline">Road trip planner</p>
-              <h1>Plan your route across the parks.</h1>
-              <p className="planner-subtitle">
-                Search for a start point, inspect a state on the map, or pin a custom origin when you need one.
-              </p>
-            </div>
-            <span className={`status-pill ${mapMode === 'pin-start' ? 'status-pill--orange' : ''}`}>{mapModeLabel}</span>
-          </div>
+        <div className="panel-toggle-bar">
+          <button type="button" className={`panel-toggle ${plannerPanelOpen ? 'panel-toggle--active' : ''}`} onClick={() => setPlannerPanelOpen((value) => !value)}>
+            Planner
+          </button>
+          <button type="button" className={`panel-toggle ${routePanelOpen ? 'panel-toggle--active' : ''}`} onClick={() => setRoutePanelOpen((value) => !value)}>
+            Route
+          </button>
+          <button
+            type="button"
+            className={`panel-toggle ${catalogPanelVisible ? 'panel-toggle--active' : ''}`}
+            onClick={() => setCatalogPanelVisible((value) => !value)}
+          >
+            State/Index
+          </button>
+          <button
+            type="button"
+            className={`panel-toggle ${featuredPanelOpen ? 'panel-toggle--active' : ''}`}
+            onClick={() => setFeaturedPanelOpen((value) => !value)}
+          >
+            Featured
+          </button>
+        </div>
 
-          <div className="mini-facts">
-            <div className="fact-chip">
-              <span className="data-label">Start</span>
-              <strong>{startPoint ? currentStartMode : 'Not set'}</strong>
-            </div>
-            <div className="fact-chip">
-              <span className="data-label">State</span>
-              <strong>{selectedState?.name ?? 'Click to inspect'}</strong>
-            </div>
-            <div className="fact-chip">
-              <span className="data-label">Catalog</span>
-              <strong>{catalogSourceLabel}</strong>
-            </div>
-          </div>
+        {plannerPanelOpen ? (
+          <FloatingPanel
+            title="Planner"
+            className="command-card"
+            accent="orange"
+            layout={panelLayouts.planner}
+            onChange={(layout) => updatePanelLayout('planner', layout)}
+          >
+            <p className="planner-lede">Pick a start location, inspect the current state, then manage the route.</p>
 
-          <div className="input-stack">
-            <label className="console-input">
-              <span className="data-label">Lock start point</span>
-              <div className="console-input__row">
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder="Search city, airport, or landmark"
-                />
-                <button type="button" className="nerv-btn primary" onClick={() => void handleSearchSubmit()}>
-                  Search
+            <div className="mini-facts mini-facts--planner">
+              <div className="fact-chip">
+                <span className="data-label">Start</span>
+                <strong>{startStop ? currentStartMode : 'Not set'}</strong>
+              </div>
+              <div className="fact-chip">
+                <span className="data-label">Current state</span>
+                <strong>{selectedState?.name ?? 'Click to inspect'}</strong>
+              </div>
+            </div>
+
+            <div className="input-stack">
+              <label className="console-input console-input--search">
+                <span className="data-label">Search start point</span>
+                <div className="console-input__row">
+                  <input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search city, airport, or landmark"
+                  />
+                  <button type="button" className="nerv-btn primary" onClick={() => void handleSearchSubmit()}>
+                    Search
+                  </button>
+                </div>
+
+                {searchStatus === 'loading' ? <p className="status-copy search-feedback">Searching for matching start locations...</p> : null}
+
+                {searchResults.length > 0 ? (
+                  <div className="search-results search-results--popover">
+                    {searchResults.map((result) => (
+                      <article key={`${result.label}-${result.coordinates.join(',')}`} className="search-result">
+                        <div className="search-result__copy">{result.label}</div>
+                        <div className="search-result__actions">
+                          <button type="button" className="nerv-btn primary" onClick={() => setStartFromSearch(result)}>
+                            Set Start
+                          </button>
+                          <button
+                            type="button"
+                            className="nerv-btn"
+                            disabled={!startStop}
+                            onClick={() => addCityStopFromSearch(result)}
+                          >
+                            Add City
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                    {!startStop ? (
+                      <p className="status-copy search-results__hint">Set a start first, then search again to add cities as intermediate stops.</p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {searchStatus === 'error' ? (
+                  <p className="status-copy status-copy--alert search-feedback">
+                    Search failed. Arm pin mode if you want to drop a start point directly on the map.
+                  </p>
+                ) : null}
+
+                {searchedQuery && searchStatus === 'idle' && searchResults.length === 0 ? (
+                  <p className="status-copy search-feedback">No matching start locations found for "{searchedQuery}".</p>
+                ) : null}
+              </label>
+
+              <div className="command-card__actions">
+                <button type="button" className="nerv-btn" onClick={handleFrameRoute}>
+                  Frame Route
+                </button>
+                <button
+                  type="button"
+                  className={`nerv-btn ${routePanelOpen ? 'primary' : ''}`}
+                  onClick={() => setRoutePanelOpen((value) => !value)}
+                >
+                  {routePanelOpen ? 'Hide Route' : 'Show Route'}
+                </button>
+                <button
+                  type="button"
+                  className={`nerv-btn ${mapMode === 'pin-start' ? 'primary' : ''}`}
+                  onClick={() => setMapMode((value) => (value === 'pin-start' ? 'inspect' : 'pin-start'))}
+                >
+                  {mapMode === 'pin-start' ? 'Cancel Pin Mode' : 'Pin Start On Map'}
+                </button>
+                <button
+                  type="button"
+                  className={`nerv-btn ${catalogPanelOpen ? 'primary' : ''}`}
+                  onClick={() => setCatalogPanelOpen((value) => !value)}
+                >
+                  {catalogPanelOpen ? 'Close Park Index' : 'Open Park Index'}
                 </button>
               </div>
-            </label>
-
-            <div className="command-card__actions">
-              <button type="button" className="nerv-btn" onClick={handleFrameRoute}>
-                Frame Route
-              </button>
-              <button
-                type="button"
-                className={`nerv-btn ${routePanelOpen ? 'primary' : ''}`}
-                onClick={() => setRoutePanelOpen((value) => !value)}
-              >
-                {routePanelOpen ? 'Hide Route' : 'Show Route'}
-              </button>
-              <button
-                type="button"
-                className={`nerv-btn ${mapMode === 'pin-start' ? 'primary' : ''}`}
-                onClick={() => setMapMode((value) => (value === 'pin-start' ? 'inspect' : 'pin-start'))}
-              >
-                {mapMode === 'pin-start' ? 'Cancel Pin Mode' : 'Pin Start On Map'}
-              </button>
-              <button
-                type="button"
-                className={`nerv-btn ${catalogPanelOpen ? 'primary' : ''}`}
-                onClick={() => setCatalogPanelOpen((value) => !value)}
-              >
-                {catalogPanelOpen ? 'Close Park Index' : 'Open Park Index'}
-              </button>
             </div>
-          </div>
 
-          {searchStatus === 'error' ? (
-            <p className="status-copy status-copy--alert">Search failed. Arm pin mode if you want to drop a start point directly on the map.</p>
-          ) : null}
+            {parksError ? <p className="status-copy status-copy--alert">{parksError}</p> : null}
+            {stateError ? <p className="status-copy status-copy--alert">{stateError}</p> : null}
 
-          {parksError ? <p className="status-copy status-copy--alert">{parksError}</p> : null}
-          {stateError ? <p className="status-copy status-copy--alert">{stateError}</p> : null}
-
-          {searchResults.length > 0 ? (
-            <div className="search-results">
-              {searchResults.map((result) => (
-                <button
-                  key={`${result.label}-${result.coordinates.join(',')}`}
-                  type="button"
-                  className="search-result"
-                  onClick={() => setStartFromSearch(result)}
-                >
-                  {result.label}
-                </button>
-              ))}
+            <div className="current-lock">
+              <span className="data-label">Current start</span>
+              <strong>{startStop?.label ?? 'No origin pinned'}</strong>
+              <span>Map click inspects states unless pin mode is armed.</span>
             </div>
-          ) : null}
-
-          <div className="current-lock">
-            <span className="data-label">Current start</span>
-            <strong>{startPoint?.label ?? 'No origin pinned'}</strong>
-            <span>Map click inspects states unless pin mode is armed.</span>
-          </div>
-        </FloatingPanel>
+          </FloatingPanel>
+        ) : null}
 
         {routePanelOpen ? (
           <FloatingPanel
@@ -1335,7 +1799,7 @@ export default function App() {
             <div className="panel-head panel-head--route">
               <div>
                 <span className="data-label">Current route</span>
-                <h2 className="route-headline">{selectedParkCount > 0 ? `${selectedParkCount} park stops` : 'No stops yet'}</h2>
+                <h2 className="route-headline">{plannedStopCount > 0 ? `${plannedStopCount} total stops` : 'No stops yet'}</h2>
               </div>
               <span className={`status-pill ${routeStatus === 'error' ? 'status-pill--alert' : routeStatus === 'loading' ? 'status-pill--orange' : ''}`}>
                 {routeStateLabel}
@@ -1353,24 +1817,32 @@ export default function App() {
               </article>
               <article>
                 <span>Stops</span>
-                <strong>{String(selectedParkCount).padStart(2, '0')}</strong>
+                <strong>{String(plannedStopCount).padStart(2, '0')}</strong>
               </article>
             </div>
 
             <div className="route-tags">
-              {startPoint ? <span className="tag-chip tag-chip--start">Start</span> : null}
-              {selectedParks.slice(0, 4).map((park) => (
-                <span key={park.id} className="tag-chip">
-                  {park.name}
+              {startStop ? <span className="tag-chip tag-chip--start">Start</span> : null}
+              {travelStops.slice(0, 4).map((stop) => (
+                <span key={stop.id} className={`tag-chip ${stop.kind === 'park' ? 'tag-chip--park' : 'tag-chip--city'}`}>
+                  {stop.kind === 'park' ? '⛺ ' : 'City '}
+                  {stop.label}
                 </span>
               ))}
-              {selectedParks.length > 4 ? <span className="tag-chip">+{selectedParks.length - 4} more</span> : null}
+              {travelStops.length > 4 ? <span className="tag-chip">+{travelStops.length - 4} more</span> : null}
             </div>
 
-            {!startPoint ? (
+            {!startStop ? (
               <div className="alert-block">
                 <span className="data-label">Origin required</span>
                 <strong>Set a start point before route calculation begins.</strong>
+              </div>
+            ) : null}
+
+            {hasPendingRouteStopData ? (
+              <div className="alert-block">
+                <span className="data-label">Syncing stops</span>
+                <strong>Waiting for park stop details to finish loading before routing.</strong>
               </div>
             ) : null}
 
@@ -1391,31 +1863,43 @@ export default function App() {
               </button>
 
               {routeDetailsOpen ? (
-                selectedParks.length > 0 ? (
+                hydratedRouteStops.length > 0 ? (
                   <div className="route-detail">
                     <ol className="route-list">
-                      {selectedParks.map((park, index) => (
-                        <li key={park.id} className="route-stop">
-                          <div className="route-stop__meta">
-                            <span className="route-stop__index">{String(index + 1).padStart(2, '0')}</span>
-                            <div className="route-stop__copy">
-                              <strong>{park.name}</strong>
-                              <span>{park.state}</span>
+                      {hydratedRouteStops.map((stop, index) => {
+                        const isStart = stop.kind === 'start';
+                        const canMoveUp = !isStart && index > (startStop ? 1 : 0);
+                        const canMoveDown = !isStart && index < hydratedRouteStops.length - 1;
+                        return (
+                          <li key={stop.id} className={`route-stop route-stop--${stop.kind}`}>
+                            <div className="route-stop__meta">
+                              <span className="route-stop__index">
+                                {isStart ? 'ST' : String(routeStopOrder.get(stop.id) ?? 0).padStart(2, '0')}
+                              </span>
+                              <div className="route-stop__copy">
+                                <strong>{stop.label}</strong>
+                                <span>{getRouteStopMeta(stop)}</span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="route-stop__actions">
-                            <button type="button" className="nerv-btn" onClick={() => movePark(index, -1)}>
-                              Up
-                            </button>
-                            <button type="button" className="nerv-btn" onClick={() => movePark(index, 1)}>
-                              Down
-                            </button>
-                            <button type="button" className="nerv-btn danger" onClick={() => togglePark(park.id)}>
-                              Remove
-                            </button>
-                          </div>
-                        </li>
-                      ))}
+                            <div className="route-stop__actions">
+                              <span className={`route-stop__badge route-stop__badge--${stop.kind}`}>{getRouteStopKindLabel(stop)}</span>
+                              {!isStart ? (
+                                <>
+                                  <button type="button" className="nerv-btn" disabled={!canMoveUp} onClick={() => moveRouteStop(index, -1)}>
+                                    Up
+                                  </button>
+                                  <button type="button" className="nerv-btn" disabled={!canMoveDown} onClick={() => moveRouteStop(index, 1)}>
+                                    Down
+                                  </button>
+                                  <button type="button" className="nerv-btn danger" onClick={() => removeRouteStop(stop.id)}>
+                                    Remove
+                                  </button>
+                                </>
+                              ) : null}
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ol>
 
                     {routeSummary.legs.length > 0 ? (
@@ -1436,14 +1920,14 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <p className="status-copy">Add parks from the featured row or park index to start building the route.</p>
+                  <p className="status-copy">Set a start, then add city or park stops to build the route.</p>
                 )
               ) : null}
             </div>
           </FloatingPanel>
         ) : null}
 
-        {catalogPanelOpen || selectedState ? (
+        {catalogPanelVisible && (catalogPanelOpen || selectedState) ? (
           <FloatingPanel
             title={catalogPanelOpen ? 'Park Index' : 'State Parks'}
             className="catalog-panel"
@@ -1472,7 +1956,7 @@ export default function App() {
 
                 <div className="catalog-list">
                   {catalogPreview.map((park) => {
-                    const isSelected = selectedParkIds.includes(park.id);
+                    const isSelected = isParkSelected(park.id);
                     return (
                       <button
                         key={park.id}
@@ -1480,7 +1964,7 @@ export default function App() {
                         className={`catalog-item ${isSelected ? 'catalog-item--selected' : ''}`}
                         onClick={() => {
                           setActiveParkId(park.id);
-                          togglePark(park.id);
+                          togglePark(park);
                           focusCoordinates(park.coordinates, 5.4);
                         }}
                       >
@@ -1512,7 +1996,7 @@ export default function App() {
                 <div className="catalog-list">
                   {stateParks.length > 0 ? (
                     stateParks.map((park) => {
-                      const isSelected = selectedParkIds.includes(park.id);
+                      const isSelected = isParkSelected(park.id);
                       return (
                         <button
                           key={park.id}
@@ -1521,7 +2005,7 @@ export default function App() {
                           onClick={() => {
                             setActiveParkId(park.id);
                             if (!isSelected) {
-                              togglePark(park.id);
+                              togglePark(park);
                             }
                             focusCoordinates(park.coordinates, 5.4);
                           }}
@@ -1544,50 +2028,52 @@ export default function App() {
           </FloatingPanel>
         ) : null}
 
-        <FloatingPanel
-          title="Featured Parks"
-          className="featured-panel"
-          accent="cyan"
-          layout={panelLayouts.featured}
-          onChange={(layout) => updatePanelLayout('featured', layout)}
-        >
-          <div className="panel-head">
-            <div>
-              <span className="data-label">Featured parks</span>
-              <h2 className="panel-title">Quick add the major parks</h2>
+        {featuredPanelOpen ? (
+          <FloatingPanel
+            title="Featured Parks"
+            className="featured-panel"
+            accent="cyan"
+            layout={panelLayouts.featured}
+            onChange={(layout) => updatePanelLayout('featured', layout)}
+          >
+            <div className="panel-head">
+              <div>
+                <span className="data-label">Featured parks</span>
+                <h2 className="panel-title">Quick add the major parks</h2>
+              </div>
+              <span className="status-pill">QUICK ADD</span>
             </div>
-            <span className="status-pill">QUICK ADD</span>
-          </div>
 
-          <div className="featured-rail">
-            {quickPickParks.map((park) => {
-              const isSelected = selectedParkIds.includes(park.id);
-              const cardStyle = park.imageUrl
-                ? {
-                    backgroundImage: `linear-gradient(180deg, rgba(2,8,18,0.12), rgba(2,8,18,0.92)), url(${park.imageUrl})`,
-                  }
-                : {
-                    background:
-                      `linear-gradient(180deg, rgba(2,8,18,0.12), rgba(2,8,18,0.92)), linear-gradient(135deg, ${park.heroColor}, #0f1630 72%)`,
-                  };
+            <div className="featured-rail">
+              {quickPickParks.map((park) => {
+                const isSelected = isParkSelected(park.id);
+                const cardStyle = park.imageUrl
+                  ? {
+                      backgroundImage: `linear-gradient(180deg, rgba(2,8,18,0.12), rgba(2,8,18,0.92)), url(${park.imageUrl})`,
+                    }
+                  : {
+                      background:
+                        `linear-gradient(180deg, rgba(2,8,18,0.12), rgba(2,8,18,0.92)), linear-gradient(135deg, ${park.heroColor}, #0f1630 72%)`,
+                    };
 
-              return (
-                <button
-                  key={park.id}
-                  type="button"
-                  className={`featured-card ${isSelected ? 'featured-card--selected' : ''}`}
-                  style={cardStyle as CSSProperties}
-                  onClick={() => handleQuickPick(park)}
-                >
-                  <span className="featured-card__eyebrow">{park.designation}</span>
-                  <strong>{park.name}</strong>
-                  <span>{park.state}</span>
-                  <span className="featured-card__status">{isSelected ? 'IN ROUTE' : 'ADD TO ROUTE'}</span>
-                </button>
-              );
-            })}
-          </div>
-        </FloatingPanel>
+                return (
+                  <button
+                    key={park.id}
+                    type="button"
+                    className={`featured-card ${isSelected ? 'featured-card--selected' : ''}`}
+                    style={cardStyle as CSSProperties}
+                    onClick={() => handleQuickPick(park)}
+                  >
+                    <span className="featured-card__eyebrow">{park.designation}</span>
+                    <strong>{park.name}</strong>
+                    <span>{park.state}</span>
+                    <span className="featured-card__status">{isSelected ? 'IN ROUTE' : 'ADD TO ROUTE'}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </FloatingPanel>
+        ) : null}
       </section>
     </div>
   );
