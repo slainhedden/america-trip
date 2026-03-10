@@ -1,0 +1,932 @@
+[
+  {
+    "id": "acad",
+    "parkCode": "acad",
+    "name": "Acadia",
+    "state": "Maine",
+    "designation": "National Park",
+    "description": "Acadia is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/ner/6B1F4159-F010-E2C4-5AD7D3C0ED65EC07.jpg",
+    "heroColor": "#9c7d5a",
+    "coordinates": [
+      -68.291272,
+      44.3103853
+    ],
+    "websiteUrl": "https://www.nps.gov/acad/index.htm"
+  },
+  {
+    "id": "arch",
+    "parkCode": "arch",
+    "name": "Arches",
+    "state": "Utah",
+    "designation": "National Park",
+    "description": "Arches is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/C30DEAE5-BE56-36A7-1167912F17B34820.jpg",
+    "heroColor": "#9c7d5a",
+    "coordinates": [
+      -109.5863498,
+      38.7225386
+    ],
+    "websiteUrl": "https://www.nps.gov/arch/index.htm"
+  },
+  {
+    "id": "badl",
+    "parkCode": "badl",
+    "name": "Badlands",
+    "state": "South Dakota",
+    "designation": "National Park",
+    "description": "Badlands is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/C4524107-A9DF-29E3-80B8554266867C06.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -102.4830457,
+      43.685479
+    ],
+    "websiteUrl": "https://www.nps.gov/badl/index.htm"
+  },
+  {
+    "id": "bibe",
+    "parkCode": "bibe",
+    "name": "Big Bend",
+    "state": "Texas",
+    "designation": "National Park",
+    "description": "Big Bend is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/F69740AB-1DD8-B71B-0BF4CCD783D01EDD.JPG",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -103.2295027,
+      29.2972065
+    ],
+    "websiteUrl": "https://www.nps.gov/bibe/index.htm"
+  },
+  {
+    "id": "bisc",
+    "parkCode": "bisc",
+    "name": "Biscayne",
+    "state": "Florida",
+    "designation": "National Park",
+    "description": "Biscayne is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/1FCA9BB2-C027-31FF-D77F060FFA94ABBD.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -80.210247,
+      25.4904948
+    ],
+    "websiteUrl": "https://www.nps.gov/bisc/index.htm"
+  },
+  {
+    "id": "blca",
+    "parkCode": "blca",
+    "name": "Black Canyon Of The Gunnison",
+    "state": "Colorado",
+    "designation": "National Park",
+    "description": "Black Canyon Of The Gunnison is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/11150253-9B4C-6FD5-D2F96FF7BC67798A.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -107.7244201,
+      38.5780107
+    ],
+    "websiteUrl": "https://www.nps.gov/blca/index.htm"
+  },
+  {
+    "id": "brca",
+    "parkCode": "brca",
+    "name": "Bryce Canyon",
+    "state": "Utah",
+    "designation": "National Park",
+    "description": "Bryce Canyon is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/1DB59E1B-A974-0512-565535214BD62FD1.jpg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -112.1827138,
+      37.5838921
+    ],
+    "websiteUrl": "https://www.nps.gov/brca/index.htm"
+  },
+  {
+    "id": "cany",
+    "parkCode": "cany",
+    "name": "Canyonlands",
+    "state": "Utah",
+    "designation": "National Park",
+    "description": "Canyonlands is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/9E7FC0DB-1DD8-B71B-0BC3880DC2250415.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -109.880112,
+      38.2451419
+    ],
+    "websiteUrl": "https://www.nps.gov/cany/index.htm"
+  },
+  {
+    "id": "care",
+    "parkCode": "care",
+    "name": "Capitol Reef",
+    "state": "Utah",
+    "designation": "National Park",
+    "description": "Capitol Reef is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/4278897C-E561-2333-807608024BC97BFB.jpg",
+    "heroColor": "#6d8fa0",
+    "coordinates": [
+      -111.1764041,
+      38.1773197
+    ],
+    "websiteUrl": "https://www.nps.gov/care/index.htm"
+  },
+  {
+    "id": "cave",
+    "parkCode": "cave",
+    "name": "Carlsbad Caverns",
+    "state": "New Mexico",
+    "designation": "National Park",
+    "description": "Carlsbad Caverns is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/C5B8D801-1DD8-B71B-0BABA1941111F83C.jpg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -104.5521084,
+      32.1413502
+    ],
+    "websiteUrl": "https://www.nps.gov/cave/index.htm"
+  },
+  {
+    "id": "chis",
+    "parkCode": "chis",
+    "name": "Channel Islands",
+    "state": "California",
+    "designation": "National Park",
+    "description": "Channel Islands is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/8B1831DF-1DD8-B71B-0BF9865C590EE5A5.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -119.911141,
+      33.9866395
+    ],
+    "websiteUrl": "https://www.nps.gov/chis/index.htm"
+  },
+  {
+    "id": "cong",
+    "parkCode": "cong",
+    "name": "Congaree",
+    "state": "South Carolina",
+    "designation": "National Park",
+    "description": "Congaree is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/F2511AA6-077D-1523-A9C2D6E72A8D2E97.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -80.7474856,
+      33.791827
+    ],
+    "websiteUrl": "https://www.nps.gov/cong/index.htm"
+  },
+  {
+    "id": "crla",
+    "parkCode": "crla",
+    "name": "Crater Lake",
+    "state": "Oregon",
+    "designation": "National Park",
+    "description": "Crater Lake is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/6B97B34B-1DD8-B71B-0B609E4FF8532FE9.jpg",
+    "heroColor": "#6d8fa0",
+    "coordinates": [
+      -122.1327472,
+      42.9410657
+    ],
+    "websiteUrl": "https://www.nps.gov/crla/index.htm"
+  },
+  {
+    "id": "cuva",
+    "parkCode": "cuva",
+    "name": "Cuyahoga Valley",
+    "state": "Ohio",
+    "designation": "National Park",
+    "description": "Cuyahoga Valley is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/8A91D821-1DD8-B71B-0B1F45D464775E6B.JPG",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -81.5709329,
+      41.2589297
+    ],
+    "websiteUrl": "https://www.nps.gov/cuva/index.htm"
+  },
+  {
+    "id": "deva",
+    "parkCode": "deva",
+    "name": "Death Valley",
+    "state": "California / Nevada",
+    "designation": "National Park",
+    "description": "Death Valley is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/8A274E4D-C9F5-C45C-4AB2CDD4FA838583.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -117.1297597,
+      36.4782241
+    ],
+    "websiteUrl": "https://www.nps.gov/deva/index.htm"
+  },
+  {
+    "id": "dena",
+    "parkCode": "dena",
+    "name": "Denali",
+    "state": "Alaska",
+    "designation": "National Park and Preserve",
+    "description": "Denali is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/ECE79510-155D-9421-1FCF6F833BD84413.jpg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -150.7341459,
+      63.3411076
+    ],
+    "websiteUrl": "https://www.nps.gov/dena/index.htm"
+  },
+  {
+    "id": "drto",
+    "parkCode": "drto",
+    "name": "Dry Tortugas",
+    "state": "Florida",
+    "designation": "National Park",
+    "description": "Dry Tortugas is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/B8CF5C7E-1DD8-B71B-0B62F152705DCACA.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -82.8717701,
+      24.6488288
+    ],
+    "websiteUrl": "https://www.nps.gov/drto/index.htm"
+  },
+  {
+    "id": "ever",
+    "parkCode": "ever",
+    "name": "Everglades",
+    "state": "Florida",
+    "designation": "National Park",
+    "description": "Everglades is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/44423E6F-FC4D-6B41-5F627F854F5791ED.jpeg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -80.8815706,
+      25.375163
+    ],
+    "websiteUrl": "https://www.nps.gov/ever/index.htm"
+  },
+  {
+    "id": "gaar",
+    "parkCode": "gaar",
+    "name": "Gates Of The Arctic",
+    "state": "Alaska",
+    "designation": "National Park and Preserve",
+    "description": "Gates Of The Arctic is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/80BF2CBB-1DD8-B71B-0B0EE177F0BF9659.jpg",
+    "heroColor": "#6d8fa0",
+    "coordinates": [
+      -153.3097797,
+      67.7968071
+    ],
+    "websiteUrl": "https://www.nps.gov/gaar/index.htm"
+  },
+  {
+    "id": "jeff",
+    "parkCode": "jeff",
+    "name": "Gateway Arch",
+    "state": "Missouri",
+    "designation": "National Park",
+    "description": "Gateway Arch is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/3B27D537-A6DF-9DFC-50E6FFA69B702157.jpg",
+    "heroColor": "#6d8fa0",
+    "coordinates": [
+      -90.1860781,
+      38.624638
+    ],
+    "websiteUrl": "https://www.nps.gov/jeff/index.htm"
+  },
+  {
+    "id": "glac",
+    "parkCode": "glac",
+    "name": "Glacier",
+    "state": "Montana",
+    "designation": "National Park",
+    "description": "Glacier is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/C5A56E57-BB50-A74E-C7FA6F9F2218D91F.jpg",
+    "heroColor": "#9c7d5a",
+    "coordinates": [
+      -113.8003219,
+      48.6832953
+    ],
+    "websiteUrl": "https://www.nps.gov/glac/index.htm"
+  },
+  {
+    "id": "glba",
+    "parkCode": "glba",
+    "name": "Glacier Bay",
+    "state": "Alaska",
+    "designation": "National Park and Preserve",
+    "description": "Glacier Bay is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/3BB1EBD0-9642-3D1C-E8F8EAFFEBAA8F33.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -138.3514292,
+      59.1313411
+    ],
+    "websiteUrl": "https://www.nps.gov/glba/index.htm"
+  },
+  {
+    "id": "grca",
+    "parkCode": "grca",
+    "name": "Grand Canyon",
+    "state": "Arizona",
+    "designation": "National Park",
+    "description": "Grand Canyon is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/99556161-1DD8-B71B-0B896E4D786C6B47.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -112.6907571,
+      36.1699367
+    ],
+    "websiteUrl": "https://www.nps.gov/grca/index.htm"
+  },
+  {
+    "id": "grte",
+    "parkCode": "grte",
+    "name": "Grand Teton",
+    "state": "Wyoming",
+    "designation": "National Park",
+    "description": "Grand Teton is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/B3CF0402-0C72-2247-816D63B41D1B3300.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -110.7054877,
+      43.8181601
+    ],
+    "websiteUrl": "https://www.nps.gov/grte/index.htm"
+  },
+  {
+    "id": "grba",
+    "parkCode": "grba",
+    "name": "Great Basin",
+    "state": "Nevada",
+    "designation": "National Park",
+    "description": "Great Basin is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/201FE384-F8DF-7A67-F799282C9034E8B1.jpg",
+    "heroColor": "#b65a3c",
+    "coordinates": [
+      -114.2579658,
+      38.9460953
+    ],
+    "websiteUrl": "https://www.nps.gov/grba/index.htm"
+  },
+  {
+    "id": "grsa",
+    "parkCode": "grsa",
+    "name": "Great Sand Dunes",
+    "state": "Colorado",
+    "designation": "National Park and Preserve",
+    "description": "Great Sand Dunes is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/40B6A775-D31E-2E17-A3D01E8D5D05BFD5.jpeg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -105.496716,
+      37.8336097
+    ],
+    "websiteUrl": "https://www.nps.gov/grsa/index.htm"
+  },
+  {
+    "id": "grsm",
+    "parkCode": "grsm",
+    "name": "Great Smoky Mountains",
+    "state": "Tennessee / North Carolina",
+    "designation": "National Park",
+    "description": "Great Smoky Mountains is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/747B3819-F172-2AEA-B362B1FC038D2106.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -83.5083063,
+      35.6010365
+    ],
+    "websiteUrl": "https://www.nps.gov/grsm/index.htm"
+  },
+  {
+    "id": "gumo",
+    "parkCode": "gumo",
+    "name": "Guadalupe Mountains",
+    "state": "Texas",
+    "designation": "National Park",
+    "description": "Guadalupe Mountains is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/80E2D888-F25A-75F0-639ADEB893018593.jpg",
+    "heroColor": "#b65a3c",
+    "coordinates": [
+      -104.8843561,
+      31.9233495
+    ],
+    "websiteUrl": "https://www.nps.gov/gumo/index.htm"
+  },
+  {
+    "id": "hale",
+    "parkCode": "hale",
+    "name": "Haleakalā",
+    "state": "Hawaii",
+    "designation": "National Park",
+    "description": "Haleakalā is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/357AE736-1DD8-B71B-0B099C77F75FF816.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -156.1587051,
+      20.7067117
+    ],
+    "websiteUrl": "https://www.nps.gov/hale/index.htm"
+  },
+  {
+    "id": "havo",
+    "parkCode": "havo",
+    "name": "Hawaiʻi Volcanoes",
+    "state": "Hawaii",
+    "designation": "National Park",
+    "description": "Hawaiʻi Volcanoes is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/36C3E97C-965A-0FBC-49F40566687E9E0E.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -155.4755462,
+      19.3243269
+    ],
+    "websiteUrl": "https://www.nps.gov/havo/index.htm"
+  },
+  {
+    "id": "hosp",
+    "parkCode": "hosp",
+    "name": "Hot Springs",
+    "state": "Arkansas",
+    "designation": "National Park",
+    "description": "Hot Springs is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/EC804E3D-DA2E-8D80-414AD1E55DF95EE6.jpg",
+    "heroColor": "#9c7d5a",
+    "coordinates": [
+      -93.0633435,
+      34.524108
+    ],
+    "websiteUrl": "https://www.nps.gov/hosp/index.htm"
+  },
+  {
+    "id": "indu",
+    "parkCode": "indu",
+    "name": "Indiana Dunes",
+    "state": "Indiana",
+    "designation": "National Park",
+    "description": "Indiana Dunes is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/D861DCC5-D20D-94B1-BF92E14EA155A584.jpg",
+    "heroColor": "#6d8fa0",
+    "coordinates": [
+      -87.0944877,
+      41.6393986
+    ],
+    "websiteUrl": "https://www.nps.gov/indu/index.htm"
+  },
+  {
+    "id": "isro",
+    "parkCode": "isro",
+    "name": "Isle Royale",
+    "state": "Michigan",
+    "designation": "National Park",
+    "description": "Isle Royale is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/28DF72A4-D718-FA03-2DB090326D0EEE2A.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -88.8284872,
+      48.0109713
+    ],
+    "websiteUrl": "https://www.nps.gov/isro/index.htm"
+  },
+  {
+    "id": "jotr",
+    "parkCode": "jotr",
+    "name": "Joshua Tree",
+    "state": "California",
+    "designation": "National Park",
+    "description": "Joshua Tree is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/C8E386CA-E68F-E483-2C9C8C50BA8B4DEE.jpg",
+    "heroColor": "#b65a3c",
+    "coordinates": [
+      -115.8427528,
+      33.9151649
+    ],
+    "websiteUrl": "https://www.nps.gov/jotr/index.htm"
+  },
+  {
+    "id": "katm",
+    "parkCode": "katm",
+    "name": "Katmai",
+    "state": "Alaska",
+    "designation": "National Park and Preserve",
+    "description": "Katmai is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/8A206307-EC89-57E9-0E24EC76383C1E3C.jpg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -155.3200511,
+      59.1066459
+    ],
+    "websiteUrl": "https://www.nps.gov/katm/index.htm"
+  },
+  {
+    "id": "kefj",
+    "parkCode": "kefj",
+    "name": "Kenai Fjords",
+    "state": "Alaska",
+    "designation": "National Park",
+    "description": "Kenai Fjords is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/479F536C-0578-CA8B-EA9306523C814E70.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -150.1081071,
+      59.8161494
+    ],
+    "websiteUrl": "https://www.nps.gov/kefj/index.htm"
+  },
+  {
+    "id": "kova",
+    "parkCode": "kova",
+    "name": "Kobuk Valley",
+    "state": "Alaska",
+    "designation": "National Park",
+    "description": "Kobuk Valley is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/3AA12CC6-E6E6-9F7D-79DA7C33936C11AC.jpg",
+    "heroColor": "#b65a3c",
+    "coordinates": [
+      -159.1988853,
+      67.3533647
+    ],
+    "websiteUrl": "https://www.nps.gov/kova/index.htm"
+  },
+  {
+    "id": "lacl",
+    "parkCode": "lacl",
+    "name": "Lake Clark",
+    "state": "Alaska",
+    "designation": "National Park and Preserve",
+    "description": "Lake Clark is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/9D511285-1DD8-B71B-0B39C127CBF6FD5D.jpg",
+    "heroColor": "#b65a3c",
+    "coordinates": [
+      -153.2486679,
+      60.5471417
+    ],
+    "websiteUrl": "https://www.nps.gov/lacl/index.htm"
+  },
+  {
+    "id": "lavo",
+    "parkCode": "lavo",
+    "name": "Lassen Volcanic",
+    "state": "California",
+    "designation": "National Park",
+    "description": "Lassen Volcanic is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/4092E028-988D-C75D-56E62D51A83D26C7.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -121.407445,
+      40.4936133
+    ],
+    "websiteUrl": "https://www.nps.gov/lavo/index.htm"
+  },
+  {
+    "id": "maca",
+    "parkCode": "maca",
+    "name": "Mammoth Cave",
+    "state": "Kentucky",
+    "designation": "National Park",
+    "description": "Mammoth Cave is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/ACD6804C-D6A0-1B7D-C765D102348951B3.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -86.1306723,
+      37.1977241
+    ],
+    "websiteUrl": "https://www.nps.gov/maca/index.htm"
+  },
+  {
+    "id": "meve",
+    "parkCode": "meve",
+    "name": "Mesa Verde",
+    "state": "Colorado",
+    "designation": "National Park",
+    "description": "Mesa Verde is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/9B96CD55-03FD-4D78-71ABD4D1CB039BC0.jpg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -108.4627697,
+      37.2389689
+    ],
+    "websiteUrl": "https://www.nps.gov/meve/index.htm"
+  },
+  {
+    "id": "mora",
+    "parkCode": "mora",
+    "name": "Mount Rainier",
+    "state": "Washington",
+    "designation": "National Park",
+    "description": "Mount Rainier is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/EFEE6DC6-1DD8-B71B-0B9A2188BE6539A9.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -121.7050843,
+      46.8611108
+    ],
+    "websiteUrl": "https://www.nps.gov/mora/index.htm"
+  },
+  {
+    "id": "npsa",
+    "parkCode": "npsa",
+    "name": "National Park of American Samoa",
+    "state": "American Samoa",
+    "designation": "National Park",
+    "description": "National Park of American Samoa is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/25FAA5B5-1DD8-B71B-0B96C6CD4CEB4517.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -169.9076281,
+      -14.2446054
+    ],
+    "websiteUrl": "https://www.nps.gov/npsa/index.htm"
+  },
+  {
+    "id": "neri",
+    "parkCode": "neri",
+    "name": "New River Gorge",
+    "state": "West Virginia",
+    "designation": "National Park and Preserve",
+    "description": "New River Gorge is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/ner/EA12B8AB-F036-916E-66218D90C8CC9667.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -81.001326,
+      37.87208
+    ],
+    "websiteUrl": "https://www.nps.gov/neri/index.htm"
+  },
+  {
+    "id": "noca",
+    "parkCode": "noca",
+    "name": "North Cascades",
+    "state": "Washington",
+    "designation": "National Park",
+    "description": "North Cascades is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/575C3B44-1DD8-B71B-0BD879DB3BC0AD69.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -121.2054252,
+      48.7111311
+    ],
+    "websiteUrl": "https://www.nps.gov/noca/index.htm"
+  },
+  {
+    "id": "olym",
+    "parkCode": "olym",
+    "name": "Olympic",
+    "state": "Washington",
+    "designation": "National Park",
+    "description": "Olympic is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/30AC5DD6-1DD8-B71B-0B9C959EF66D8600.jpg",
+    "heroColor": "#9c7d5a",
+    "coordinates": [
+      -123.6659752,
+      47.8029075
+    ],
+    "websiteUrl": "https://www.nps.gov/olym/index.htm"
+  },
+  {
+    "id": "pefo",
+    "parkCode": "pefo",
+    "name": "Petrified Forest",
+    "state": "Arizona",
+    "designation": "National Park",
+    "description": "Petrified Forest is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/150EC131-05BF-1222-9FA407EC6101A8B7.jpg",
+    "heroColor": "#b65a3c",
+    "coordinates": [
+      -109.7877581,
+      34.9837061
+    ],
+    "websiteUrl": "https://www.nps.gov/pefo/index.htm"
+  },
+  {
+    "id": "pinn",
+    "parkCode": "pinn",
+    "name": "Pinnacles",
+    "state": "California",
+    "designation": "National Park",
+    "description": "Pinnacles is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/2913AF89-1DD8-B71B-0B428CC0594DA1F3.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -121.1811791,
+      36.4904131
+    ],
+    "websiteUrl": "https://www.nps.gov/pinn/index.htm"
+  },
+  {
+    "id": "redw",
+    "parkCode": "redw",
+    "name": "Redwood",
+    "state": "California",
+    "designation": "National and State Parks",
+    "description": "Redwood is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/0FBA9AF8-1DD8-B71B-0BF72F798FF5BC7E.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -124.0337811,
+      41.4328655
+    ],
+    "websiteUrl": "https://www.nps.gov/redw/index.htm"
+  },
+  {
+    "id": "romo",
+    "parkCode": "romo",
+    "name": "Rocky Mountain",
+    "state": "Colorado",
+    "designation": "National Park",
+    "description": "Rocky Mountain is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/0EEA3965-9431-23C2-B5EFADA926608273.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -105.697303,
+      40.3554842
+    ],
+    "websiteUrl": "https://www.nps.gov/romo/index.htm"
+  },
+  {
+    "id": "sagu",
+    "parkCode": "sagu",
+    "name": "Saguaro",
+    "state": "Arizona",
+    "designation": "National Park",
+    "description": "Saguaro is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/A2B8CCFF-A823-EE40-783CC8ED1325326F.jpg",
+    "heroColor": "#6d8fa0",
+    "coordinates": [
+      -110.7584235,
+      32.2092441
+    ],
+    "websiteUrl": "https://www.nps.gov/sagu/index.htm"
+  },
+  {
+    "id": "seki",
+    "parkCode": "seki",
+    "name": "Sequoia & Kings Canyon",
+    "state": "California",
+    "designation": "National Parks",
+    "description": "Sequoia & Kings Canyon is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/14B0FC86-DB98-FED5-4605BEDEEB487B7B.jpg",
+    "heroColor": "#9c7d5a",
+    "coordinates": [
+      -118.5873754,
+      36.7117221
+    ],
+    "websiteUrl": "https://www.nps.gov/seki/index.htm"
+  },
+  {
+    "id": "shen",
+    "parkCode": "shen",
+    "name": "Shenandoah",
+    "state": "Virginia",
+    "designation": "National Park",
+    "description": "Shenandoah is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/ner/21699F1D-ED66-7BA3-853FA2DA0A5BC3E0.jpg",
+    "heroColor": "#cb7f4b",
+    "coordinates": [
+      -78.4694608,
+      38.491704
+    ],
+    "websiteUrl": "https://www.nps.gov/shen/index.htm"
+  },
+  {
+    "id": "thro",
+    "parkCode": "thro",
+    "name": "Theodore Roosevelt",
+    "state": "North Dakota",
+    "designation": "National Park",
+    "description": "Theodore Roosevelt is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/2118F52C-1DD8-B71B-0B0713EA8F3E1AEA.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -103.4312798,
+      47.1732057
+    ],
+    "websiteUrl": "https://www.nps.gov/thro/index.htm"
+  },
+  {
+    "id": "viis",
+    "parkCode": "viis",
+    "name": "Virgin Islands",
+    "state": "U.S. Virgin Islands",
+    "designation": "National Park",
+    "description": "Virgin Islands is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/9F5976B7-D4D2-3A7A-7B1B9359FB8E1FBB.jpg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -64.743098,
+      18.342746
+    ],
+    "websiteUrl": "https://www.nps.gov/viis/index.htm"
+  },
+  {
+    "id": "voya",
+    "parkCode": "voya",
+    "name": "Voyageurs",
+    "state": "Minnesota",
+    "designation": "National Park",
+    "description": "Voyageurs is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/8D97D084-9570-DC29-314FB85CAA2E10E4.jpg",
+    "heroColor": "#b65a3c",
+    "coordinates": [
+      -92.8381727,
+      48.483668
+    ],
+    "websiteUrl": "https://www.nps.gov/voya/index.htm"
+  },
+  {
+    "id": "whsa",
+    "parkCode": "whsa",
+    "name": "White Sands",
+    "state": "New Mexico",
+    "designation": "National Park",
+    "description": "White Sands is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/A16AAF73-C278-1129-5EB3056BED7BA85C.jpg",
+    "heroColor": "#9c7d5a",
+    "coordinates": [
+      -106.3253153,
+      32.7783358
+    ],
+    "websiteUrl": "https://www.nps.gov/whsa/index.htm"
+  },
+  {
+    "id": "wica",
+    "parkCode": "wica",
+    "name": "Wind Cave",
+    "state": "South Dakota",
+    "designation": "National Park",
+    "description": "Wind Cave is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/mwr/CC25AAB0-1DD8-B71B-0B48DF48A0B8DE84.JPG",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -103.4394896,
+      43.5801019
+    ],
+    "websiteUrl": "https://www.nps.gov/wica/index.htm"
+  },
+  {
+    "id": "wrst",
+    "parkCode": "wrst",
+    "name": "Wrangell - St Elias",
+    "state": "Alaska",
+    "designation": "National Park and Preserve",
+    "description": "Wrangell - St Elias is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/akr/F8805363-1DD8-B71B-0BE59C3D3428BD7B.jpg",
+    "heroColor": "#6d8870",
+    "coordinates": [
+      -142.8362618,
+      61.9259993
+    ],
+    "websiteUrl": "https://www.nps.gov/wrst/index.htm"
+  },
+  {
+    "id": "yell",
+    "parkCode": "yell",
+    "name": "Yellowstone",
+    "state": "Wyoming / Montana / Idaho",
+    "designation": "National Park",
+    "description": "Yellowstone is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/C0B398B8-B507-4BBC-CA7FF67430274C33.jpg",
+    "heroColor": "#667f72",
+    "coordinates": [
+      -110.5471471,
+      44.5964889
+    ],
+    "websiteUrl": "https://www.nps.gov/yell/index.htm"
+  },
+  {
+    "id": "yose",
+    "parkCode": "yose",
+    "name": "Yosemite",
+    "state": "California",
+    "designation": "National Park",
+    "description": "Yosemite is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/pwr/36C683FE-1DD8-B71B-0B6B4AE9C34946B8.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -119.5571335,
+      37.8484731
+    ],
+    "websiteUrl": "https://www.nps.gov/yose/index.htm"
+  },
+  {
+    "id": "zion",
+    "parkCode": "zion",
+    "name": "Zion",
+    "state": "Utah",
+    "designation": "National Park",
+    "description": "Zion is part of the official National Park Service Find a Park catalog.",
+    "imageUrl": "https://www.nps.gov/common/uploads/banner_image/imr/47299690-C5E9-0C7F-0CF70CFE6625C0E7.jpg",
+    "heroColor": "#8aa39b",
+    "coordinates": [
+      -113.026442,
+      37.298237
+    ],
+    "websiteUrl": "https://www.nps.gov/zion/index.htm"
+  }
+]

@@ -15,8 +15,8 @@ import Map, {
   type MapMouseEvent,
   type MapRef,
 } from 'react-map-gl/maplibre';
-import { fetchNationalParks, fetchPublicNationalParks } from './lib/nps';
-import { loadNpsApiKey, loadParkCatalog, loadTripState, saveParkCatalog, saveTripState } from './lib/storage';
+import bundledParkCatalog from './data/parks-catalog.json';
+import { loadTripState, saveTripState } from './lib/storage';
 import type {
   CityRouteStop,
   Park,
@@ -41,7 +41,6 @@ const GEOCODING_API_URL = import.meta.env.VITE_GEOCODING_API_URL?.trim();
 const GEOCODING_API_KEY = import.meta.env.VITE_GEOCODING_API_KEY?.trim();
 const ROUTING_API_URL =
   import.meta.env.VITE_ROUTING_API_URL?.trim() ?? 'https://router.project-osrm.org/route/v1/driving';
-const ENV_NPS_API_KEY = import.meta.env.VITE_NPS_API_KEY?.trim() ?? '';
 const PANEL_LAYOUT_STORAGE_KEY = 'america-trip-panel-layouts';
 const US_STATES_GEOJSON_URL = 'https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json';
 const PANEL_MARGIN = 20;
@@ -66,6 +65,7 @@ const EMPTY_STATE_LABELS: GeoJSON.FeatureCollection<GeoJSON.Point, { name: strin
   type: 'FeatureCollection',
   features: [],
 };
+const BUNDLED_PARK_CATALOG = bundledParkCatalog as Park[];
 
 type StateSelection = {
   coordinates: [number, number];
@@ -915,26 +915,16 @@ async function fetchStateLabelPoints(): Promise<GeoJSON.FeatureCollection<GeoJSO
 }
 
 export default function App() {
-  const initialParkCatalogRef = useRef<Park[]>(loadParkCatalog());
-  const initialStateRef = useRef<TripState | null>(loadTripState(initialParkCatalogRef.current));
+  const initialStateRef = useRef<TripState | null>(loadTripState(BUNDLED_PARK_CATALOG));
   const hadStoredTripStateRef = useRef(initialStateRef.current !== null);
-  const initialApiKeyRef = useRef(loadNpsApiKey() || ENV_NPS_API_KEY);
   const mapRef = useRef<MapRef | null>(null);
   const searchRequestIdRef = useRef(0);
+  const parks = BUNDLED_PARK_CATALOG;
 
   const [routeStops, setRouteStops] = useState<RouteStop[]>(
-    () => initialStateRef.current?.routeStops ?? buildDefaultRouteStops(createParkMap(initialParkCatalogRef.current)),
+    () => initialStateRef.current?.routeStops ?? buildDefaultRouteStops(createParkMap(parks)),
   );
-  const [parks, setParks] = useState<Park[]>(initialParkCatalogRef.current);
   const [activeParkId, setActiveParkId] = useState<string | null>(null);
-  const [apiKey] = useState(initialApiKeyRef.current);
-  const [, setParksStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
-    initialParkCatalogRef.current.length > 0 ? 'ready' : initialApiKeyRef.current ? 'loading' : 'idle',
-  );
-  const [, setCatalogSource] = useState<'public' | 'developer' | 'cache'>(
-    initialParkCatalogRef.current.length > 0 ? 'cache' : 'public',
-  );
-  const [parksError, setParksError] = useState<string | null>(null);
   const [parkFilterQuery, setParkFilterQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -1132,52 +1122,6 @@ export default function App() {
       window.removeEventListener('resize', handleViewportResize);
     };
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadOfficialParks() {
-      setParksStatus('loading');
-      setParksError(null);
-
-      try {
-        const nextParks = apiKey ? await fetchNationalParks(apiKey) : await fetchPublicNationalParks();
-        if (!cancelled) {
-          setParks(nextParks);
-          saveParkCatalog(nextParks);
-          setCatalogSource(apiKey ? 'developer' : 'public');
-          setParksStatus('ready');
-        }
-      } catch (error) {
-        if (apiKey) {
-          try {
-            const fallbackParks = await fetchPublicNationalParks();
-            if (!cancelled) {
-              setParks(fallbackParks);
-              saveParkCatalog(fallbackParks);
-              setCatalogSource('public');
-              setParksStatus('ready');
-              setParksError('Developer feed failed. Falling back to the public NPS Find a Park catalog.');
-            }
-            return;
-          } catch {
-            // Fall through to shared error handling.
-          }
-        }
-
-        if (!cancelled) {
-          setParksStatus(parks.length > 0 ? 'ready' : 'error');
-          setParksError(error instanceof Error ? error.message : 'Unable to load official National Park Service data.');
-        }
-      }
-    }
-
-    void loadOfficialParks();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [apiKey, parks.length]);
 
   useEffect(() => {
     if (parks.length === 0) {
@@ -1776,8 +1720,6 @@ export default function App() {
                 </button>
               </div>
             </div>
-
-            {parksError ? <p className="status-copy status-copy--alert">{parksError}</p> : null}
             {stateError ? <p className="status-copy status-copy--alert">{stateError}</p> : null}
 
             <div className="current-lock">
