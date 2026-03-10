@@ -1,8 +1,22 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-export default defineConfig({
+import { readFileSync } from 'node:fs';
+function getGithubPagesBase() {
+    try {
+        const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+        if (!packageJson.homepage) {
+            return '/';
+        }
+        const pathname = new URL(packageJson.homepage).pathname.replace(/\/+$/, '');
+        return pathname ? `${pathname}/` : '/';
+    }
+    catch {
+        return '/';
+    }
+}
+export default defineConfig(({ command }) => ({
     plugins: [react()],
-    base: 'america-trip',
+    base: command === 'serve' ? '/' : getGithubPagesBase(),
     build: {
         chunkSizeWarningLimit: 1200,
         rollupOptions: {
@@ -22,4 +36,4 @@ export default defineConfig({
             },
         },
     },
-});
+}));
