@@ -587,6 +587,35 @@ strong {
   text-transform: uppercase;
 }
 
+.route-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--edge);
+  background: linear-gradient(180deg, rgba(10, 20, 11, 0.82), rgba(5, 12, 7, 0.96));
+}
+
+.route-options__head,
+.route-options__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.route-options strong {
+  color: var(--text);
+}
+
+.route-options__copy {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
 .route-tags {
   display: flex;
   flex-wrap: wrap;
@@ -619,6 +648,18 @@ strong {
   border-color: rgba(122, 255, 118, 0.2);
   background: rgba(122, 255, 118, 0.1);
   color: var(--green);
+}
+
+.tag-chip--end {
+  border-color: rgba(255, 98, 89, 0.22);
+  background: rgba(255, 98, 89, 0.1);
+  color: var(--red);
+}
+
+.tag-chip--loop {
+  border-color: rgba(255, 230, 127, 0.2);
+  background: rgba(255, 230, 127, 0.08);
+  color: #f7e792;
 }
 
 .alert-block {
@@ -678,6 +719,11 @@ strong {
 .route-stop--start {
   border-color: rgba(255, 152, 48, 0.2);
   background: rgba(255, 152, 48, 0.08);
+}
+
+.route-stop--end {
+  border-color: rgba(255, 98, 89, 0.22);
+  background: rgba(255, 98, 89, 0.08);
 }
 
 .route-stop__meta {
@@ -741,6 +787,15 @@ strong {
 .route-stop__badge--park {
   border-color: rgba(122, 255, 118, 0.24);
   color: var(--green);
+}
+
+.route-stop__badge--end {
+  border-color: rgba(255, 98, 89, 0.24);
+  color: var(--red);
+}
+
+.route-loop-note {
+  margin-top: -2px;
 }
 
 .leg-card span {
@@ -917,6 +972,11 @@ strong {
 .marker--city {
   border-color: rgba(32, 240, 255, 0.72);
   color: var(--cyan);
+}
+
+.marker--end {
+  border-color: rgba(255, 98, 89, 0.72);
+  color: #ffb3ab;
 }
 
 .maplibregl-popup {

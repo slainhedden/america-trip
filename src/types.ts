@@ -34,6 +34,10 @@ export type CityRouteStop = RouteStopBase & {
   kind: 'city';
 };
 
+export type EndRouteStop = RouteStopBase & {
+  kind: 'end';
+};
+
 export type ParkRouteStop = RouteStopBase & {
   kind: 'park';
   parkCode: string;
@@ -41,10 +45,11 @@ export type ParkRouteStop = RouteStopBase & {
   state: string;
 };
 
-export type RouteStop = StartRouteStop | CityRouteStop | ParkRouteStop;
+export type RouteStop = StartRouteStop | CityRouteStop | EndRouteStop | ParkRouteStop;
 
 export type TripState = {
   routeStops: RouteStop[];
+  returnToStart: boolean;
 };
 
 export type RouteLegSummary = {

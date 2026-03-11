@@ -19,6 +19,7 @@ import bundledParkCatalog from './data/parks-catalog.json';
 import { loadTripState, saveTripState } from './lib/storage';
 import type {
   CityRouteStop,
+  EndRouteStop,
   Park,
   ParkRouteStop,
   RouteStop,
@@ -548,6 +549,24 @@ function createCityStop(result: SearchResult): CityRouteStop {
   };
 }
 
+function createEndStop(result: SearchResult): EndRouteStop {
+  return {
+    id: 'end',
+    kind: 'end',
+    label: result.label,
+    coordinates: result.coordinates,
+  };
+}
+
+function createLoopReturnStop(startStop: StartRouteStop): EndRouteStop {
+  return {
+    id: 'end:loop',
+    kind: 'end',
+    label: startStop.label,
+    coordinates: startStop.coordinates,
+  };
+}
+
 function createParkStop(park: Park): ParkRouteStop {
   return {
     id: `park:${park.id}`,
@@ -571,6 +590,7 @@ function hydrateRouteStop(stop: RouteStop, parksById: globalThis.Map<string, Par
 
 function normalizeRouteStops(stops: RouteStop[]): RouteStop[] {
   let startStop: StartRouteStop | null = null;
+  let endStop: EndRouteStop | null = null;
   const seenParkIds = new Set<string>();
   const orderedStops: RouteStop[] = [];
 
@@ -578,6 +598,13 @@ function normalizeRouteStops(stops: RouteStop[]): RouteStop[] {
     if (stop.kind === 'start') {
       if (!startStop) {
         startStop = { ...stop, id: 'start' };
+      }
+      continue;
+    }
+
+    if (stop.kind === 'end') {
+      if (!endStop) {
+        endStop = { ...stop, id: 'end' };
       }
       continue;
     }
@@ -592,7 +619,17 @@ function normalizeRouteStops(stops: RouteStop[]): RouteStop[] {
     orderedStops.push(stop);
   }
 
-  return startStop ? [startStop, ...orderedStops] : orderedStops;
+  return [...(startStop ? [startStop] : []), ...orderedStops, ...(endStop ? [endStop] : [])];
+}
+
+function insertStopBeforeEnd(stops: RouteStop[], nextStop: RouteStop): RouteStop[] {
+  const normalized = normalizeRouteStops(stops);
+  const hasEndStop = normalized[normalized.length - 1]?.kind === 'end';
+  if (!hasEndStop) {
+    return [...normalized, nextStop];
+  }
+
+  return [...normalized.slice(0, -1), nextStop, normalized[normalized.length - 1]];
 }
 
 function buildDefaultRouteStops(parksById: globalThis.Map<string, Park>): RouteStop[] {
@@ -605,6 +642,8 @@ function getRouteStopMeta(stop: RouteStop): string {
       return stop.source === 'search' ? 'Search origin' : 'Pinned origin';
     case 'city':
       return 'City stop';
+    case 'end':
+      return stop.id === 'end:loop' ? 'Returns to the origin' : 'Final destination';
     case 'park':
       return stop.state;
   }
@@ -616,6 +655,8 @@ function getRouteStopKindLabel(stop: RouteStop): string {
       return 'START';
     case 'city':
       return 'CITY';
+    case 'end':
+      return stop.id === 'end:loop' ? 'RETURN' : 'END';
     case 'park':
       return '⛺ TENT';
   }
@@ -933,6 +974,7 @@ export default function App() {
   const [routeSummary, setRouteSummary] = useState<RouteSummary>(EMPTY_ROUTE);
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [returnToStart, setReturnToStart] = useState(initialStateRef.current?.returnToStart ?? true);
   const [selectedState, setSelectedState] = useState<StateSelection | null>(null);
   const [, setStateStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [stateError, setStateError] = useState<string | null>(null);
@@ -955,22 +997,40 @@ export default function App() {
     () => (hydratedRouteStops[0]?.kind === 'start' ? (hydratedRouteStops[0] as StartRouteStop) : null),
     [hydratedRouteStops],
   );
-  const travelStops = useMemo(() => (startStop ? hydratedRouteStops.slice(1) : hydratedRouteStops), [hydratedRouteStops, startStop]);
-  const routeableTravelStops = useMemo(
-    () => travelStops.filter((stop) => hasValidCoordinates(stop.coordinates)),
-    [travelStops],
+  const endStop = useMemo(() => {
+    const lastStop = hydratedRouteStops[hydratedRouteStops.length - 1];
+    return lastStop?.kind === 'end' ? (lastStop as EndRouteStop) : null;
+  }, [hydratedRouteStops]);
+  const travelStops = useMemo(
+    () => hydratedRouteStops.filter((stop) => stop.kind !== 'start' && stop.kind !== 'end'),
+    [hydratedRouteStops],
   );
+  const routeableTravelStops = useMemo(() => travelStops.filter((stop) => hasValidCoordinates(stop.coordinates)), [travelStops]);
   const hasPendingRouteStopData = useMemo(
-    () => travelStops.some((stop) => !hasValidCoordinates(stop.coordinates)),
-    [travelStops],
+    () => travelStops.some((stop) => !hasValidCoordinates(stop.coordinates)) || Boolean(endStop && !hasValidCoordinates(endStop.coordinates)),
+    [endStop, travelStops],
+  );
+  const shouldReturnToStart = useMemo(
+    () => Boolean(startStop && !endStop && returnToStart && routeableTravelStops.length > 0),
+    [endStop, returnToStart, routeableTravelStops.length, startStop],
   );
   const routeableStops = useMemo(() => {
     if (!startStop || !hasValidCoordinates(startStop.coordinates) || hasPendingRouteStopData) {
       return [];
     }
 
-    return [startStop, ...routeableTravelStops];
-  }, [hasPendingRouteStopData, routeableTravelStops, startStop]);
+    const nextStops: RouteStop[] = [startStop, ...routeableTravelStops];
+    if (endStop) {
+      nextStops.push(endStop);
+      return nextStops;
+    }
+
+    if (shouldReturnToStart) {
+      nextStops.push(createLoopReturnStop(startStop));
+    }
+
+    return nextStops;
+  }, [endStop, hasPendingRouteStopData, routeableTravelStops, shouldReturnToStart, startStop]);
   const routeStopOrder = useMemo(
     () => new globalThis.Map(travelStops.map((stop, index) => [stop.id, index + 1])),
     [travelStops],
@@ -1038,11 +1098,18 @@ export default function App() {
       properties: {},
     };
   }, [routeSummary.geometry]);
+  const displayedRouteStops = useMemo(() => {
+    if (!shouldReturnToStart || !startStop) {
+      return hydratedRouteStops;
+    }
+
+    return [...hydratedRouteStops, createLoopReturnStop(startStop)];
+  }, [hydratedRouteStops, shouldReturnToStart, startStop]);
   const mappableRouteCoordinates = useMemo(
-    () => hydratedRouteStops.filter((stop) => hasValidCoordinates(stop.coordinates)).map((stop) => stop.coordinates),
-    [hydratedRouteStops],
+    () => routeableStops.map((stop) => stop.coordinates),
+    [routeableStops],
   );
-  const plannedStopCount = hydratedRouteStops.length;
+  const plannedStopCount = displayedRouteStops.length;
 
   useEffect(() => {
     if (!hadStoredTripStateRef.current && hydratedRouteStops.length === 0 && parks.length === 0) {
@@ -1051,8 +1118,9 @@ export default function App() {
 
     saveTripState({
       routeStops: hydratedRouteStops,
+      returnToStart,
     });
-  }, [hydratedRouteStops, parks.length]);
+  }, [hydratedRouteStops, parks.length, returnToStart]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -1224,7 +1292,20 @@ export default function App() {
       return;
     }
 
-    setRouteStops((current) => [...normalizeRouteStops(current), createCityStop(result)]);
+    setRouteStops((current) => insertStopBeforeEnd(current, createCityStop(result)));
+    setSearchQuery(result.label);
+    setSearchResults([]);
+    setRoutePanelOpen(true);
+    setMapMode('inspect');
+    focusCoordinates(result.coordinates);
+  }
+
+  function setEndFromSearch(result: SearchResult) {
+    if (!startStop) {
+      return;
+    }
+
+    setRouteStops((current) => normalizeRouteStops([...current.filter((stop) => stop.kind !== 'end'), createEndStop(result)]));
     setSearchQuery(result.label);
     setSearchResults([]);
     setRoutePanelOpen(true);
@@ -1285,7 +1366,7 @@ export default function App() {
         return normalized.filter((stop) => !(stop.kind === 'park' && stop.parkId === park.id));
       }
 
-      return [...normalized, createParkStop(park)];
+      return insertStopBeforeEnd(normalized, createParkStop(park));
     });
   }
 
@@ -1293,12 +1374,22 @@ export default function App() {
     setRouteStops((current) => current.filter((stop) => stop.id !== stopId));
   }
 
+  function clearEndStop() {
+    setRouteStops((current) => current.filter((stop) => stop.kind !== 'end'));
+  }
+
   function moveRouteStop(index: number, direction: -1 | 1) {
     setRouteStops((current) => {
       const normalized = normalizeRouteStops(current);
       const firstMovableIndex = normalized[0]?.kind === 'start' ? 1 : 0;
+      const lastMovableIndex = normalized[normalized.length - 1]?.kind === 'end' ? normalized.length - 2 : normalized.length - 1;
       const nextIndex = index + direction;
-      if (index < firstMovableIndex || nextIndex < firstMovableIndex || nextIndex >= normalized.length) {
+      if (
+        index < firstMovableIndex ||
+        index > lastMovableIndex ||
+        nextIndex < firstMovableIndex ||
+        nextIndex > lastMovableIndex
+      ) {
         return current;
       }
 
@@ -1371,7 +1462,7 @@ export default function App() {
       setActiveParkId(null);
     }
     setRoutePanelOpen(true);
-    focusCoordinates(stop.coordinates, stop.kind === 'city' ? 6.2 : 5.8);
+    focusCoordinates(stop.coordinates, stop.kind === 'city' || stop.kind === 'end' ? 6.2 : 5.8);
   }
 
   function handleQuickPick(park: Park) {
@@ -1542,6 +1633,20 @@ export default function App() {
             </Marker>
           ))}
 
+          {endStop && hasValidCoordinates(endStop.coordinates) ? (
+            <Marker longitude={endStop.coordinates[0]} latitude={endStop.coordinates[1]}>
+              <button
+                type="button"
+                className="marker marker--end"
+                onClick={(event) => handleRouteStopMarkerClick(event, endStop)}
+                aria-label={`${endStop.label} route end`}
+              >
+                <span className="marker__flag">END</span>
+                <span>EN</span>
+              </button>
+            </Marker>
+          ) : null}
+
           {routeFeature ? (
             <Source id="route" type="geojson" data={routeFeature}>
               <Layer
@@ -1641,7 +1746,7 @@ export default function App() {
 
             <div className="input-stack">
               <label className="console-input console-input--search">
-                <span className="data-label">Search start point</span>
+                <span className="data-label">Search locations</span>
                 <div className="console-input__row">
                   <input
                     value={searchQuery}
@@ -1673,11 +1778,21 @@ export default function App() {
                           >
                             Add City
                           </button>
+                          <button
+                            type="button"
+                            className="nerv-btn"
+                            disabled={!startStop}
+                            onClick={() => setEndFromSearch(result)}
+                          >
+                            Set End
+                          </button>
                         </div>
                       </article>
                     ))}
                     {!startStop ? (
-                      <p className="status-copy search-results__hint">Set a start first, then search again to add cities as intermediate stops.</p>
+                      <p className="status-copy search-results__hint">
+                        Set a start first, then search again to add cities or choose a final destination.
+                      </p>
                     ) : null}
                   </div>
                 ) : null}
@@ -1763,6 +1878,35 @@ export default function App() {
               </article>
             </div>
 
+            <div className="route-options">
+              <div className="route-options__head">
+                <span className="data-label">Finish</span>
+                <div className="route-options__actions">
+                  <button
+                    type="button"
+                    className={`nerv-btn ${!endStop && returnToStart ? 'primary' : ''}`}
+                    onClick={() => setReturnToStart((value) => !value)}
+                    disabled={!startStop || Boolean(endStop)}
+                  >
+                    {returnToStart ? 'Loop On' : 'Loop Off'}
+                  </button>
+                  {endStop ? (
+                    <button type="button" className="nerv-btn" onClick={clearEndStop}>
+                      Clear End
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              <strong>{endStop ? endStop.label : shouldReturnToStart ? 'Returns to start' : 'Ends at the last stop'}</strong>
+              <span className="route-options__copy">
+                {endStop
+                  ? 'Routing now finishes at this explicit destination.'
+                  : returnToStart
+                    ? 'When the last stop is complete, the route closes the loop back to the start.'
+                    : 'No end stop is set, so routing stops at the final city or park.'}
+              </span>
+            </div>
+
             <div className="route-tags">
               {startStop ? <span className="tag-chip tag-chip--start">Start</span> : null}
               {travelStops.slice(0, 4).map((stop) => (
@@ -1772,6 +1916,8 @@ export default function App() {
                 </span>
               ))}
               {travelStops.length > 4 ? <span className="tag-chip">+{travelStops.length - 4} more</span> : null}
+              {endStop ? <span className="tag-chip tag-chip--end">End {endStop.label}</span> : null}
+              {!endStop && shouldReturnToStart ? <span className="tag-chip tag-chip--loop">Loop to start</span> : null}
             </div>
 
             {!startStop ? (
@@ -1805,18 +1951,21 @@ export default function App() {
               </button>
 
               {routeDetailsOpen ? (
-                hydratedRouteStops.length > 0 ? (
+                displayedRouteStops.length > 0 ? (
                   <div className="route-detail">
                     <ol className="route-list">
-                      {hydratedRouteStops.map((stop, index) => {
+                      {displayedRouteStops.map((stop, index) => {
                         const isStart = stop.kind === 'start';
-                        const canMoveUp = !isStart && index > (startStop ? 1 : 0);
-                        const canMoveDown = !isStart && index < hydratedRouteStops.length - 1;
+                        const isEnd = stop.kind === 'end';
+                        const isLoopReturn = stop.id === 'end:loop';
+                        const lastWaypointIndex = displayedRouteStops.length - (endStop || shouldReturnToStart ? 2 : 1);
+                        const canMoveUp = !isStart && !isEnd && index > (startStop ? 1 : 0);
+                        const canMoveDown = !isStart && !isEnd && index < lastWaypointIndex;
                         return (
                           <li key={stop.id} className={`route-stop route-stop--${stop.kind}`}>
                             <div className="route-stop__meta">
                               <span className="route-stop__index">
-                                {isStart ? 'ST' : String(routeStopOrder.get(stop.id) ?? 0).padStart(2, '0')}
+                                {isStart ? 'ST' : isEnd ? 'EN' : String(routeStopOrder.get(stop.id) ?? 0).padStart(2, '0')}
                               </span>
                               <div className="route-stop__copy">
                                 <strong>{stop.label}</strong>
@@ -1825,7 +1974,7 @@ export default function App() {
                             </div>
                             <div className="route-stop__actions">
                               <span className={`route-stop__badge route-stop__badge--${stop.kind}`}>{getRouteStopKindLabel(stop)}</span>
-                              {!isStart ? (
+                              {!isStart && !isEnd ? (
                                 <>
                                   <button type="button" className="nerv-btn" disabled={!canMoveUp} onClick={() => moveRouteStop(index, -1)}>
                                     Up
@@ -1837,6 +1986,11 @@ export default function App() {
                                     Remove
                                   </button>
                                 </>
+                              ) : null}
+                              {isEnd && !isLoopReturn ? (
+                                <button type="button" className="nerv-btn danger" onClick={() => removeRouteStop(stop.id)}>
+                                  Remove
+                                </button>
                               ) : null}
                             </div>
                           </li>
@@ -1862,7 +2016,7 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <p className="status-copy">Set a start, then add city or park stops to build the route.</p>
+                  <p className="status-copy">Set a start, then add city or park stops and optionally lock an end point.</p>
                 )
               ) : null}
             </div>

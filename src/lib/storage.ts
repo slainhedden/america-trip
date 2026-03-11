@@ -1,4 +1,4 @@
-import type { Park, ParkRouteStop, RouteStop, StartPointSource, StartRouteStop, TripState } from '../types';
+import type { EndRouteStop, Park, ParkRouteStop, RouteStop, StartPointSource, StartRouteStop, TripState } from '../types';
 
 const TRIP_STORAGE_KEY = 'america-trip-planner-state';
 const PARK_CATALOG_STORAGE_KEY = 'america-trip-planner-park-catalog';
@@ -55,8 +55,18 @@ function createLegacyParkStop(parkId: string): ParkRouteStop {
   };
 }
 
+function createEndStop(label: string, coordinates: [number, number]): EndRouteStop {
+  return {
+    id: 'end',
+    kind: 'end',
+    label,
+    coordinates,
+  };
+}
+
 function normalizeRouteStops(stops: RouteStop[]): RouteStop[] {
   let startStop: StartRouteStop | null = null;
+  let endStop: EndRouteStop | null = null;
   const seenParkIds = new Set<string>();
   const orderedStops: RouteStop[] = [];
 
@@ -64,6 +74,13 @@ function normalizeRouteStops(stops: RouteStop[]): RouteStop[] {
     if (stop.kind === 'start') {
       if (!startStop) {
         startStop = { ...stop, id: 'start' };
+      }
+      continue;
+    }
+
+    if (stop.kind === 'end') {
+      if (!endStop) {
+        endStop = { ...stop, id: 'end' };
       }
       continue;
     }
@@ -78,7 +95,7 @@ function normalizeRouteStops(stops: RouteStop[]): RouteStop[] {
     orderedStops.push(stop);
   }
 
-  return startStop ? [startStop, ...orderedStops] : orderedStops;
+  return [...(startStop ? [startStop] : []), ...orderedStops, ...(endStop ? [endStop] : [])];
 }
 
 function parseStartStop(value: unknown): StartRouteStop | null {
@@ -123,6 +140,15 @@ function parseRouteStop(value: unknown, parksById: globalThis.Map<string, Park>)
         coordinates,
       };
     }
+    case 'end': {
+      const label = getString(value.label);
+      const coordinates = isCoordinatePair(value.coordinates) ? value.coordinates : null;
+      if (!label || !coordinates) {
+        return null;
+      }
+
+      return createEndStop(label, coordinates);
+    }
     case 'park': {
       const parkId = getString(value.parkId);
       if (!parkId) {
@@ -163,6 +189,7 @@ function migrateTripState(rawState: unknown, parks: Park[]): TripState | null {
           .map((stop) => parseRouteStop(stop, parksById))
           .filter(Boolean) as RouteStop[],
       ),
+      returnToStart: rawState.returnToStart !== false,
     };
   }
 
@@ -177,6 +204,7 @@ function migrateTripState(rawState: unknown, parks: Park[]): TripState | null {
 
     return {
       routeStops: normalizeRouteStops([...(startStop ? [startStop] : []), ...parkStops]),
+      returnToStart: true,
     };
   }
 
